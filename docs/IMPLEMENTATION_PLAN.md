@@ -5,6 +5,9 @@ This plan breaks the MVP into small, testable tasks. Update it when the code cha
 ## Current State Snapshot
 
 - Scripts live under `scripts/` and run locally with PowerShell 7.
+- `Rename-MyFiles.ps1` calls Azure OpenAI REST API directly — already cross-platform.
+- `Deploy-RenameMyFiles.ps1` uses Az PowerShell module — requires Bicep installed separately.
+- `Remove-RenameMyFilesResources.ps1` uses Az PowerShell module.
 - Dry-run uses `ShouldProcess` for `-WhatIf` behavior.
 - Per-file errors are handled without stopping the batch.
 - Filename sanitization removes invalid characters and trims trailing dots.
@@ -12,39 +15,77 @@ This plan breaks the MVP into small, testable tasks. Update it when the code cha
 - PDF and Office extraction are placeholders (use filename as context).
 - A summary is printed with renamed and skipped counts.
 
-## Phase 0 - Baseline Verification
+## Phase 0 - Cross-Platform Azure Tooling Migration
 
-- Verify the README and docs refer to `scripts/` paths.
-- Confirm `Rename-MyFiles.ps1` uses `ShouldProcess` for dry-run.
-- Confirm Azure OpenAI calls are isolated in a single function.
+**Issue:** Az PowerShell module requires separate Bicep installation, limiting cross-platform usability.
 
-## Phase 1 - File Intake and Safety
+**Solution:** Migrate deployment scripts to use Azure CLI (`az`), which has built-in Bicep support and works identically on Windows, macOS, and Linux.
 
-- Validate folder path input and handle missing or empty folders.
-- Confirm only top-level files are processed (no recursion).
-- Ensure per-file error handling does not stop the batch.
+### Tasks:
+- [x] Update `Deploy-RenameMyFiles.ps1` to use `az` CLI commands instead of Az module cmdlets.
+  - [x] Replace `Connect-AzAccount` → `az login --use-device-code`
+  - [x] Replace `Set-AzContext` → `az account set --subscription`
+  - [x] Replace `Get-AzResourceGroup` → `az group show --name` (with error handling)
+  - [x] Replace `New-AzResourceGroup` → `az group create --name --location`
+  - [x] Replace `New-AzResourceGroupDeployment` → `az deployment group create --resource-group --template-file`
+  - [x] Parse JSON output from `az` commands using `ConvertFrom-Json`
+  - [x] Update instructions to reference API key retrieval via `az cognitiveservices account keys list`
+  - [x] Added Azure CLI prerequisite check (`Get-Command az`)
+  - [x] Tested on Windows with dry-run and full deployment
+  - Validation: Script successfully creates resource group and deploys Bicep template via Azure CLI
+- [ ] Update `Remove-RenameMyFilesResources.ps1` to use `az` CLI commands.
+  - Replace Azure authentication and context cmdlets with `az` equivalents
+  - Replace `Get-AzResource` → `az resource list --resource-group`
+  - Replace `Remove-AzResourceGroup` → `az group delete --name`
+- [x] Test script on Windows to ensure it works correctly.
+  - Dry-run validation passed
+  - Full deployment test passed (resource group and Bicep deployment via az CLI confirmed)
+  - Error handling validated
+- [x] Update documentation to reflect new prerequisites (in script .NOTES):
+  - [x] Removed Az PowerShell module requirement
+  - [x] Added Azure CLI installation requirement
+  - [x] Removed separate Bicep installation requirement (built into az CLI)
 
-## Phase 2 - Content Extraction
+## Phase 1 - Baseline Verification
 
-- Replace PDF placeholder logic with real text extraction (when added).
-- Replace Office placeholder logic with real text extraction (when added).
-- Add a size/length limit to reduce content sent to Azure OpenAI.
+- [x] Verify the README and docs refer to `scripts/` paths.
+- [x] Confirm `Rename-MyFiles.ps1` uses `ShouldProcess` for dry-run.
+- [x] Confirm Azure OpenAI calls are isolated in a single function.
 
-## Phase 3 - AI Naming and Sanitization
+## Phase 2 - File Intake and Safety
 
-- Ensure prompt produces filename-safe output.
-- Add truncation rules for long filenames.
-- Confirm collisions are resolved without overwriting.
+- [x] Validate folder path input and handle missing or empty folders.
+- [x] Confirm only top-level files are processed (no recursion).
+- [x] Ensure per-file error handling does not stop the batch.
 
-## Phase 4 - Reporting and Docs
+## Phase 3 - Content Extraction
 
-- Emit a consistent summary (renamed, skipped, failed).
-- Improve verbose logging for troubleshooting.
-- Keep README and docs aligned with real behavior.
-- Record any architecture changes in ADRs.
+- [ ] Replace PDF placeholder logic with real text extraction (future enhancement).
+- [ ] Replace Office placeholder logic with real text extraction (future enhancement).
+- [x] Add a size/length limit to reduce content sent to Azure OpenAI (8000 chars implemented).
+
+## Phase 4 - AI Naming and Sanitization
+
+- [x] Ensure prompt produces filename-safe output.
+- [x] Add truncation rules for long filenames (sanitization implemented).
+- [x] Confirm collisions are resolved without overwriting (numeric suffix implemented).
+
+## Phase 5 - Reporting and Docs
+
+- [x] Emit a consistent summary (renamed, skipped, failed).
+- [x] Improve verbose logging for troubleshooting.
+- [x] Keep README and docs aligned with real behavior.
+  - Updated README.md prerequisites (Azure CLI instead of Az module)
+  - Updated user-guide.md prerequisites (Azure CLI instead of Az module)
+  - Updated RUNBOOK.md prerequisites (Azure CLI instead of Az module)
+  - Removed all references to separate Bicep installation
+- [ ] Record any architecture changes in ADRs (pending: cross-platform tooling decision).
 
 ## Assumptions
 
 - No automated tests exist yet; validation is manual.
 - Azure OpenAI is the only AI backend.
 - Users supply credentials via environment variables or parameters.
+- PowerShell 7 is available on Windows and macOS (cross-platform by default).
+- Azure CLI works consistently across Windows, macOS, and Linux.
+- Bicep support is built into Azure CLI (no separate installation needed).

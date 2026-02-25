@@ -35,8 +35,9 @@
     Deploys resources to UK South in a custom resource group.
 
 .NOTES
-    Requires PowerShell 7.2 or later and the Az PowerShell module.
-    Install with: Install-Module -Name Az -Scope CurrentUser
+    Requires PowerShell 7.2 or later and the Azure CLI.
+    Install Azure CLI from: https://learn.microsoft.com/cli/azure/install-azure-cli
+    Bicep support is built into Azure CLI (no separate installation required).
 #>
 
 [CmdletBinding(SupportsShouldProcess)]
@@ -57,7 +58,7 @@ param (
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$bicepTemplatePath = Join-Path $PSScriptRoot 'infra' 'main.bicep'
+$bicepTemplatePath = Join-Path $PSScriptRoot '../infra' 'main.bicep'
 
 if (-not (Test-Path -LiteralPath $bicepTemplatePath)) {
     throw "Bicep template not found at: $bicepTemplatePath"
@@ -70,14 +71,33 @@ Write-Host " Resource Group: $ResourceGroupName"
 Write-Host " Location      : $Location"
 Write-Host ''
 
+# Check Azure CLI is installed.
+if (-not (Get-Command az -ErrorAction SilentlyContinue)) {
+    throw "Azure CLI not found. Install from: https://learn.microsoft.com/cli/azure/install-azure-cli"
+}
+
 # Connect / set subscription.
 try {
-    $context = Get-AzContext
-    if (-not $context -or $context.Subscription.Id -ne $SubscriptionId) {
-        Write-Host 'Connecting to Azure...' -ForegroundColor Cyan
-        Connect-AzAccount -SubscriptionId $SubscriptionId | Out-Null
+    # Check current Azure CLI context.
+    $accountJson = az account show 2>$null
+    $currentAccount = if ($accountJson) { $accountJson | ConvertFrom-Json } else { $null }
+    
+    if (-not $currentAccount -or $currentAccount.id -ne $SubscriptionId) {
+        if (-not $currentAccount) {
+            Write-Host 'Not logged in to Azure. Initiating login...' -ForegroundColor Cyan
+            az login --use-device-code | Out-Null
+            if ($LASTEXITCODE -ne 0) {
+                throw "Azure login failed."
+            }
+        }
+        
+        Write-Host "Setting subscription to: $SubscriptionId" -ForegroundColor Cyan
+        az account set --subscription $SubscriptionId 2>&1 | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+            throw "Failed to set subscription. Verify subscription ID is correct and you have access."
+        }
     }
-    Set-AzContext -SubscriptionId $SubscriptionId | Out-Null
+    
     Write-Host "Using subscription: $SubscriptionId" -ForegroundColor Green
 }
 catch {
@@ -86,10 +106,15 @@ catch {
 
 # Create resource group if it does not exist.
 if ($PSCmdlet.ShouldProcess($ResourceGroupName, 'Create resource group')) {
-    $rg = Get-AzResourceGroup -Name $ResourceGroupName -ErrorAction SilentlyContinue
+    $rgJson = az group show --name $ResourceGroupName 2>$null
+    $rg = if ($rgJson) { $rgJson | ConvertFrom-Json } else { $null }
+    
     if (-not $rg) {
         Write-Host "Creating resource group '$ResourceGroupName' in '$Location'..." -ForegroundColor Cyan
-        New-AzResourceGroup -Name $ResourceGroupName -Location $Location | Out-Null
+        az group create --name $ResourceGroupName --location $Location --output json | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+            throw "Failed to create resource group."
+        }
         Write-Host "Resource group created." -ForegroundColor Green
     }
     else {
@@ -103,18 +128,22 @@ if ($PSCmdlet.ShouldProcess($ResourceGroupName, 'Deploy Bicep template')) {
 
     $deploymentName = "rename-my-files-$(Get-Date -Format 'yyyyMMddHHmmss')"
 
-    $deploymentParams = @{
-        Name                  = $deploymentName
-        ResourceGroupName     = $ResourceGroupName
-        TemplateFile          = $bicepTemplatePath
-        location              = $Location
-    }
-
     try {
-        $deployment = New-AzResourceGroupDeployment @deploymentParams -Verbose:$VerbosePreference
+        $deploymentJson = az deployment group create `
+            --name $deploymentName `
+            --resource-group $ResourceGroupName `
+            --template-file $bicepTemplatePath `
+            --parameters location=$Location `
+            --output json
+        
+        if ($LASTEXITCODE -ne 0) {
+            throw "Deployment command failed with exit code $LASTEXITCODE"
+        }
+        
+        $deployment = $deploymentJson | ConvertFrom-Json
 
-        if ($deployment.ProvisioningState -ne 'Succeeded') {
-            throw "Deployment finished with state: $($deployment.ProvisioningState)"
+        if ($deployment.properties.provisioningState -ne 'Succeeded') {
+            throw "Deployment finished with state: $($deployment.properties.provisioningState)"
         }
 
         Write-Host 'Deployment succeeded!' -ForegroundColor Green
@@ -125,14 +154,14 @@ if ($PSCmdlet.ShouldProcess($ResourceGroupName, 'Deploy Bicep template')) {
         Write-Host ' Set these environment variables before running Rename-MyFiles.ps1:' -ForegroundColor White
         Write-Host ''
 
-        $endpoint = $deployment.Outputs['openAIEndpoint'].Value
+        $endpoint = $deployment.properties.outputs.openAIEndpoint.value
         Write-Host "  `$env:AZURE_OPENAI_ENDPOINT = '$endpoint'"
 
         Write-Host ''
         Write-Host ' To retrieve your API key, run:' -ForegroundColor White
 
-        $openAIName = $deployment.Outputs['openAIResourceName'].Value
-        Write-Host "  Get-AzCognitiveServicesAccountKey -ResourceGroupName '$ResourceGroupName' -Name '$openAIName'"
+        $openAIName = $deployment.properties.outputs.openAIResourceName.value
+        Write-Host "  az cognitiveservices account keys list --name '$openAIName' --resource-group '$ResourceGroupName' --query key1 --output tsv"
         Write-Host ''
         Write-Host ' Then set:' -ForegroundColor White
         Write-Host '  $env:AZURE_OPENAI_KEY = "<key from above>"'

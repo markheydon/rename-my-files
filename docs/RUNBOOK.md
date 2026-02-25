@@ -8,7 +8,7 @@ Explain how to run, validate, and maintain the Rename My Files scripts.
 
 - PowerShell 7.2 or later
 - Azure subscription with rights to create resources
-- Azure PowerShell module (`Az`)
+- [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) (includes built-in Bicep support)
 
 ## Setup
 

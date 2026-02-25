@@ -49,7 +49,7 @@ Acme Ltd Contract Renewal Notice - 13th January 2026.pdf
 
 - PowerShell 7.2 or later
 - An Azure subscription
-- The [Azure PowerShell module](https://learn.microsoft.com/en-us/powershell/azure/install-azure-powershell) (`Az` module): `Install-Module -Name Az -Scope CurrentUser`
+- [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) — includes built-in Bicep support
 - Contributor (or Owner) access to create resources in your subscription
 
 ---

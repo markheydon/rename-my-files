@@ -11,10 +11,9 @@ Before you begin, you will need:
 1. **PowerShell 7.2 or later** installed on your computer.
    - [Download PowerShell](https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell)
 2. **An Azure account** (free to create at [azure.microsoft.com](https://azure.microsoft.com/free/)).
-3. **The Azure PowerShell module** installed:
-   ```powershell
-   Install-Module -Name Az -Scope CurrentUser
-   ```
+3. **Azure CLI** installed:
+   - [Install Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli)
+   - Bicep support is built-in (no separate installation needed)
 
 ---
 
