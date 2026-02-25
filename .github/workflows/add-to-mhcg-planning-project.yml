@@ -1,0 +1,95 @@
+# File: .github/workflows/add-to-mhcg-planning-project.yml
+# Version: v1.0.2 - Shared workflow for auto-adding issues to MHCG planning project.
+# This workflow triggers when an issue is opened or labeled.
+# It checks for specific labels and adds the issue to the designated GitHub Project.
+
+name: Auto-add to the MHCG Planning Project
+
+on:
+  issues:
+    types: [labeled] # Trigger on issue creation or when a label is added.
+
+jobs:
+  add_to_project:
+    runs-on: ubuntu-latest
+    env:
+      PROJECT_URL: https://github.com/orgs/mhcg/projects/24
+      GITHUB_TOKEN: ${{ secrets.ORG_PROJECT_TOKEN }}
+
+    # Only run if the issue has one of the specified labels:
+    # Service Desk types: service request, incident, problem, change request.
+    # Development project types: feature, improvement, bug, technical, spike.
+    if: |
+      contains(github.event.issue.labels.*.name, 'service request') ||
+      contains(github.event.issue.labels.*.name, 'incident') ||
+      contains(github.event.issue.labels.*.name, 'problem') ||
+      contains(github.event.issue.labels.*.name, 'change request') ||
+      contains(github.event.issue.labels.*.name, 'feature') ||
+      contains(github.event.issue.labels.*.name, 'improvement') ||
+      contains(github.event.issue.labels.*.name, 'bug') ||
+      contains(github.event.issue.labels.*.name, 'technical') ||
+      contains(github.event.issue.labels.*.name, 'spike')
+    steps:
+      - name: Determine Work Item Type
+        id: determine-work-item-type
+        uses: actions/github-script@v7
+        with:
+          result-encoding: string
+          script: |
+            const labels = context.payload.issue.labels.map(l => l.name);
+            let type = null;
+            // Determine the work item type based on labels.
+            if (labels.includes('feature') || labels.includes('improvement') || labels.includes('technical') || labels.includes('spike')) {
+              type = 'User Story';
+            } else if (labels.includes('bug')) {
+              type = 'Bug';
+            } else if (labels.includes('service request')) {
+              type = 'Service Request';
+            } else if (labels.includes('incident')) {
+              type = 'Incident';
+            } else if (labels.includes('problem')) {
+              type = 'Problem';
+            } else if (labels.includes('change request')) {
+              type = 'Change Request';
+            }
+            return type;
+
+      - name: Determine Area
+        id: determine-area
+        uses: actions/github-script@v7
+        with:
+          result-encoding: string
+          script: |
+            const labels = context.payload.issue.labels.map(l => l.name);
+            let area = null;
+            // Determine the area based on labels.
+            if (labels.includes('service request') || labels.includes('incident') || labels.includes('problem') || labels.includes('change request')) {
+              area = 'Service Desk';
+            } else if (labels.includes('feature') || labels.includes('improvement') || labels.includes('bug') || labels.includes('technical') || labels.includes('spike')) {
+              area = 'Development';
+            }
+            return area;
+
+      - name: Add issue to GitHub Project
+        id: add-to-project
+        uses: actions/add-to-project@main
+        with:
+          project-url: ${{ env.PROJECT_URL }}
+          github-token: ${{ env.GITHUB_TOKEN }}
+
+      - uses: titoportas/update-project-fields@v0.1.0
+        with:
+          project-url: ${{ env.PROJECT_URL }}
+          github-token: ${{ env.GITHUB_TOKEN }}
+          item-id: ${{ steps.add-to-project.outputs.itemId }} # Use the item-id output of the previous step.
+          field-keys: Work Item Type
+          field-values: ${{ steps.determine-work-item-type.outputs.result }}
+
+      - uses: titoportas/update-project-fields@v0.1.0
+        if: ${{ steps.determine-area.outputs.result != '' }}
+        with:
+          project-url: ${{ env.PROJECT_URL }}
+          github-token: ${{ env.GITHUB_TOKEN }}
+          item-id: ${{ steps.add-to-project.outputs.itemId }} # Use the item-id output of the previous step.
+          field-keys: Area
+          field-values: ${{ steps.determine-area.outputs.result }}
