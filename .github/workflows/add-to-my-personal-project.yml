@@ -1,0 +1,21 @@
+name: Auto-add to the Mark's Planning Project
+
+on:
+  issues:
+    types: [labeled]
+  pull_request_target:
+    types: [labeled]
+
+permissions:
+  contents: read            # allow reading repo contents (safe default)
+  issues: read              # read issue metadata (labels) if you ever rely on API
+  pull-requests: read       # read PR metadata (labels) if you ever rely on API
+  actions: none
+  checks: none
+  deployments: none
+
+jobs:
+  add-to-personal-project:
+    uses: markheydon/github-workflows/.github/workflows/add-to-personal-project.yml@main
+    secrets:
+      PERSONAL_ACCESS_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
