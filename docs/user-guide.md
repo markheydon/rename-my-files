@@ -17,9 +17,52 @@ Before you begin, you will need:
 
 ---
 
+## ⚠️ Important: Data Residency and Processing Locations
+
+**Before you deploy, understand where your file data is processed:**
+
+This tool uses Azure OpenAI with **GlobalStandard** deployment type, which means:
+
+| Aspect | What Happens |
+|--------|-------------|
+| **File content at rest** | Stays in your Azure region (e.g., UK South) |
+| **File content during AI processing** | **May be sent to any Azure region** where the model is available |
+| **Processing duration** | Only milliseconds (during the API call) |
+| **Data storage** | Not stored after processing completes |
+| **Third parties** | Not shared; remains within Azure infrastructure |
+
+### Is This Right for You?
+
+✅ **Use Rename My Files if:**
+- You're comfortable with your data being processed across Azure's global infrastructure
+- Your organisation has no strict geographic data residency requirements
+- You value cost efficiency and broad region availability
+
+⚠️ **Talk to your IT or compliance team if:**
+- Your organisation requires all data processing to stay within EU member nations
+- Your organisation requires all data processing to stay within the United States
+- Your organisation requires data processing in a single specific region
+- You handle sensitive data with geographic compliance requirements
+
+### Alternative: DataZone Deployment
+
+If you need **strict geographic processing**, you can deploy with `DataZoneStandard` instead:
+- **EU data zone:** All data processed only within EU member nations
+- **US data zone:** All data processed only within US regions
+
+This requires deploying to an EU or US region. For details, see [Azure OpenAI Deployment Types](https://learn.microsoft.com/en-us/azure/ai-foundry/foundry-models/concepts/deployment-types?view=foundry-classic#choose-the-right-deployment-type) and refer to the [GlobalStandard Deployment Type decision document](../DECISIONS/ADR-0003-globalstandard-deployment-type.md).
+
+---
+
 ## Step 1 — Deploy Azure Resources
 
 You only need to do this **once**. It creates the Azure AI service that powers the renaming.
+
+### Supported Regions
+
+This tool works in most Azure regions. uksouth is fully supported. For a complete list of supported regions, see the [Azure OpenAI model availability documentation](https://learn.microsoft.com/en-us/azure/ai-foundry/foundry-models/concepts/models-sold-directly-by-azure?view=foundry-classic&tabs=global-standard-aoai%2Cglobal-standard&pivots=azure-openai#global-standard-model-availability).
+
+### Deployment Steps
 
 1. Open a PowerShell 7 terminal.
 2. Navigate to the folder where you downloaded the Rename My Files scripts.
@@ -123,15 +166,25 @@ Found 8 file(s). Processing...
 
 ## Cost
 
-> ⚠️ These are **rough estimates only**. Actual costs depend on your usage and Azure pricing at the time.
+> ⚠️ **Estimates only** — actual costs depend on file size and current Azure pricing. For the latest rates, see [Azure OpenAI Pricing](https://azure.microsoft.com/en-us/pricing/details/cognitive-services/openai-service/).
 
-| Usage | Estimated cost |
-|-------|---------------|
-| Idle (no files being processed) | **$0** — no idle cost |
-| Per typical document | **~$0.001–$0.005** |
-| 100 documents | **~$0.10–$0.50** |
+**Deployment uses GlobalStandard pricing:**
+- **Input:** $0.15 per 1M tokens
+- **Output:** $0.60 per 1M tokens
+- **Idle cost:** $0.00 (pay-as-you-go, no standing charges)
 
-Azure OpenAI charges per token (roughly per word). A typical letter or invoice uses about 500–1,000 tokens, costing a fraction of a cent.
+| Usage | Estimated Cost |
+|-------|----------------|
+| Per typical document (500–1,000 words) | **~$0.0001** (~0.01¢) |
+| 10 documents | **~$0.001** |
+| 100 documents | **~$0.015** |
+| 1,000 documents | **~$0.15** |
+| 10,000 documents | **~$1.50** |
+
+**Key points:**
+- You are only charged when you run the rename script — there is no cost when idle.
+- Larger documents consume more tokens and cost slightly more.
+- These estimates assume typical business documents (letters, invoices, reports).
 
 ---
 

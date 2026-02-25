@@ -2,12 +2,14 @@
 // Provisions the cheapest capable Azure OpenAI resource and a GPT-4o mini model deployment.
 //
 // SKU rationale:
-//   - 'S0' is the standard pay-as-you-go SKU for Azure OpenAI / Cognitive Services.
+//   - Resource SKU 'S0': standard pay-as-you-go for Azure OpenAI / Cognitive Services.
 //     There is no free tier for Azure OpenAI beyond the initial free-trial credits.
-//   - GPT-4o mini is chosen as the most cost-effective model capable of understanding
-//     document content and generating descriptive filenames.
-//   - Capacity is set to the minimum (1k tokens-per-minute units) as this workload
-//     is low-throughput (one file at a time, interactively).
+//   - Deployment SKU 'GlobalStandard': gpt-4o-mini is available in uksouth and other regions 
+//     only with GlobalStandard deployment type (not regional Standard deployment).
+//     GlobalStandard provides good performance and global routing at competitive cost.
+//   - GPT-4o mini: cheapest capable model for understanding document content and generating
+//     descriptive filenames.
+//   - Capacity: 1 (minimum) = 1,000 tokens-per-minute for interactive single-file processing.
 //     TODO: Increase capacity if batch-processing large folders is needed.
 
 @description('Azure region for all resources.')
@@ -57,26 +59,23 @@ resource openAIAccount 'Microsoft.CognitiveServices/accounts@2023-10-01-preview'
 // ---------------------------------------------------------------------------
 //
 // Model: gpt-4o-mini — cheapest capable GPT-4-class model as of 2025.
+// Deployment type: GlobalStandard — available in uksouth and other regions.
 // Capacity: 1 (minimum) = 1,000 tokens-per-minute.
 //   - For a typical document of ~500 words (~700 tokens input + ~60 tokens output),
 //     this allows roughly 1 rename per minute. Sufficient for interactive use.
 //   - TODO: Increase capacity (e.g. to 10 or 30) if processing large batches.
 
-resource modelDeployment 'Microsoft.CognitiveServices/accounts/deployments@2023-10-01-preview' = {
+resource modelDeployment 'Microsoft.CognitiveServices/accounts/deployments@2025-09-01' = {
   parent: openAIAccount
   name: modelDeploymentName
   sku: {
-    // Standard deployment — pay per token. Dynamic quota shares capacity with other deployments.
-    name: 'Standard'
+    name: 'GlobalStandard'
     capacity: 1
   }
   properties: {
     model: {
       format: 'OpenAI'
       name: 'gpt-4o-mini'
-      // TODO: Pin to a specific model version once the preview period is over,
-      // to avoid unexpected behaviour from auto-upgrades.
-      version: '2024-07-18'
     }
     versionUpgradeOption: 'OnceCurrentVersionExpired'
   }

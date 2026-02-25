@@ -4,4 +4,4 @@ agent: RMF Tech Writer
 argument-hint: "docs to update"
 ---
 
-Update README.md and docs/ to reflect current behavior. Do not add features that do not exist.
+Update README.md and docs/ to reflect current behaviour. Do not add features that do not exist. Use UK English spelling and terminology.

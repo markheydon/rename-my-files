@@ -8,7 +8,7 @@ This plan breaks the MVP into small, testable tasks. Update it when the code cha
 - `Rename-MyFiles.ps1` calls Azure OpenAI REST API directly — already cross-platform.
 - `Deploy-RenameMyFiles.ps1` uses Az PowerShell module — requires Bicep installed separately.
 - `Remove-RenameMyFilesResources.ps1` uses Az PowerShell module.
-- Dry-run uses `ShouldProcess` for `-WhatIf` behavior.
+- Dry-run uses `ShouldProcess` for `-WhatIf` behaviour.
 - Per-file errors are handled without stopping the batch.
 - Filename sanitization removes invalid characters and trims trailing dots.
 - Collision handling appends a numeric suffix.
@@ -72,14 +72,15 @@ This plan breaks the MVP into small, testable tasks. Update it when the code cha
 
 ## Phase 5 - Reporting and Docs
 
-- [x] Emit a consistent summary (renamed, skipped, failed).
-- [x] Improve verbose logging for troubleshooting.
-- [x] Keep README and docs aligned with real behavior.
   - Updated README.md prerequisites (Azure CLI instead of Az module)
+  - Updated README.md with GlobalStandard deployment info and cost estimates
   - Updated user-guide.md prerequisites (Azure CLI instead of Az module)
+  - Updated user-guide.md with region support and detailed cost estimates
   - Updated RUNBOOK.md prerequisites (Azure CLI instead of Az module)
   - Removed all references to separate Bicep installation
-- [ ] Record any architecture changes in ADRs (pending: cross-platform tooling decision).
+  - Created ADR-0002: Use Azure CLI Instead of Azure PowerShell Module
+  - Created ADR-0003: Use GlobalStandard Deployment Type for Azure OpenAI
+  - Documented data residency implications, deployment alternatives, and compliance guidance
 
 ## Assumptions
 

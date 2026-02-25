@@ -1,9 +1,6 @@
 # Rename My Files
 
 > **Single purpose:** Point at a folder of files and automatically rename them based on their content using AI — saving you time and making your files easier to find.
-# Rename My Files
-
-> **Single purpose:** Point at a folder of files and automatically rename them based on their content using AI — saving you time and making your files easier to find.
 
 ---
 
@@ -62,17 +59,43 @@ Use the provided deployment script to provision all required Azure resources:
 .\scripts\Deploy-RenameMyFiles.ps1 `
     -SubscriptionId "<your-subscription-id>" `
     -ResourceGroupName "rg-rename-my-files" `
-    -Location "eastus"
+    -Location "uksouth"
 ```
 
 The script will:
 
 1. Create a resource group.
-2. Deploy an Azure OpenAI resource.
-3. Deploy the GPT-4o mini model deployment.
+2. Deploy an Azure OpenAI resource (S0 SKU — pay-as-you-go).
+3. Deploy the GPT-4o mini model with GlobalStandard deployment (available in most regions including uksouth).
 4. Output the endpoint and API key needed to run the rename script.
 
 > **Note:** You only need to deploy once. After that, run `scripts\Rename-MyFiles.ps1` as often as you like.
+
+### Cost Estimates
+
+> ⚠️ **Estimates only** — actual costs depend on file sizes and current Azure pricing.
+
+| Usage | Estimated Monthly Cost |
+|-------|------------------------|
+| Idle (no processing) | **$0.00** — no idle charges |
+| 10 files | ~**$0.001** |
+| 100 files | ~**$0.015** |
+| 1,000 files | ~**$0.15** |
+
+Charging is per token (approximately per word). A typical document (~700 tokens) costs ~**$0.0001** (one hundredth of a cent).
+
+---
+
+## ⚠️ Data Residency and Processing Locations
+
+This tool uses Azure OpenAI with **GlobalStandard deployment type**. This means:
+
+- **File content at rest:** Stays in your specified Azure region
+- **File content during processing:** May be processed in any Azure region where the model is deployed
+- **Processing duration:** Only during the API call (milliseconds)
+- **Data storage:** Not retained after processing
+
+**If your organisation requires strict data residency rules** (e.g., all processing must stay within the EU or US), refer to the [Data Residency and Processing Locations section in the User Guide](docs/user-guide.md#-important-data-residency-and-processing-locations) and read [ADR-0003: Use GlobalStandard Deployment Type](docs/DECISIONS/ADR-0003-globalstandard-deployment-type.md) for alternative deployment options.
 
 ---
 
@@ -119,21 +142,6 @@ To remove all Azure resources when you no longer need them:
     -SubscriptionId "<your-subscription-id>" `
     -ResourceGroupName "rg-rename-my-files"
 ```
-
----
-
-## Cost Estimates
-
-> ⚠️ These are **rough estimates only**, not guarantees. Actual costs depend on usage and Azure pricing at time of use. Always check [Azure pricing](https://azure.microsoft.com/en-us/pricing/) for current rates.
-
-| Component | Estimated Cost |
-|-----------|---------------|
-| Azure OpenAI resource (idle) | ~$0/month (no charge when idle) |
-| GPT-4o mini — input tokens | ~$0.00015 per 1,000 tokens |
-| GPT-4o mini — output tokens | ~$0.00060 per 1,000 tokens |
-| **Typical cost per document** | **~$0.001–$0.005** depending on file size |
-
-For a folder of 100 typical documents (letters, invoices, etc.), expect to spend **less than $0.50** in AI costs.
 
 ---
 

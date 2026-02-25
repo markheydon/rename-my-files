@@ -46,7 +46,7 @@ Your files stay in the same folder — only their names change.
 
 Using this tool requires an Azure account. Costs are **very low** for typical use:
 
-- Less than **$0.01 per document** in most cases.
+- About **$0.0001 per document** for typical files.
 - **No ongoing idle cost** — you only pay when the tool processes a file.
 
 See the [User Guide](user-guide.md#cost) for more detail.

@@ -4,7 +4,7 @@ agent: Repo Bootstrapper
 argument-hint: "Describe the app idea + target stack + UI type (e.g., '.NET 10, Blazor Server') + MVP must-haves"
 ---
 
-Using the user’s idea, initialize the repository for AI-assisted development.
+Using the user’s idea, initialise the repository for AI-assisted development.
 
 Create/update:
 - .github/copilot-instructions.md

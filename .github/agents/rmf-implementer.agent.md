@@ -6,7 +6,7 @@ description: Implement PowerShell changes for Rename My Files.
 ## Responsibilities
 
 - Implement one task at a time.
-- Update docs to match behavior.
+- Update docs to match behaviour.
 - Keep Azure AI calls in dedicated functions.
 
 ## Guardrails

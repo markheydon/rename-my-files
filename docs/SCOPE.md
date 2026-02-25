@@ -32,4 +32,4 @@ Rename files in a folder using AI-generated, descriptive names based on file con
 - A user can run a real rename with Azure OpenAI credentials provided.
 - The tool preserves extensions and avoids overwriting by applying a suffix.
 - Errors for individual files do not stop the batch.
-- Documentation describes the current behavior and limitations.
+- Documentation describes the current behaviour and limitations.
