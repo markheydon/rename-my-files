@@ -17,7 +17,7 @@
     Defaults to 'rg-rename-my-files'.
 
 .PARAMETER Location
-    The Azure region for the resources. Defaults to 'eastus'.
+    The Azure region for the resources. Defaults to 'ukwest'.
     Note: Azure OpenAI is not available in all regions. See:
     https://learn.microsoft.com/azure/ai-services/openai/concepts/models#model-summary-table-and-region-availability
 
@@ -49,9 +49,9 @@ param (
     [ValidateNotNullOrEmpty()]
     [string]$ResourceGroupName = 'rg-rename-my-files',
 
-    [Parameter(HelpMessage = 'Azure region. Defaults to eastus.')]
+    [Parameter(HelpMessage = 'Azure region. Defaults to ukwest.')]
     [ValidateNotNullOrEmpty()]
-    [string]$Location = 'eastus'
+    [string]$Location = 'ukwest'
 )
 
 Set-StrictMode -Version Latest

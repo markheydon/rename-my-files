@@ -36,7 +36,7 @@ Your files stay in the same folder — only their names change.
 ## Limitations
 
 - Only plain text files (`.txt`, `.md`, `.csv`, etc.) are fully supported out of the box.
-- PDF and Office documents have limited support in the current version.
+- PDF and Office documents have limited support (the tool currently uses the filename as context).
 - Encrypted or corrupted files are skipped automatically.
 - AI-generated names are suggestions — they may not always be perfect.
 

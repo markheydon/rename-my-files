@@ -74,3 +74,13 @@ Before suggesting or generating any code, ask yourself:
 3. Does this change introduce a new external service or dependency? If yes, is it strictly necessary for reading files or calling Azure AI?
 4. Is the documentation accurate and scoped to what the code currently does?
 5. Are secrets and keys handled safely (environment variables, not hardcoded)?
+
+---
+
+## Workflow and Quality Gates
+
+- Keep changes small and scoped to the rename workflow.
+- Prefer updating docs alongside code changes.
+- Validation gates:
+	- Tests: none yet (do not invent). If tests are added later, run them by default.
+	- Lint: optional; only run if the repo adds a linter in the future.

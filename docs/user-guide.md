@@ -27,7 +27,7 @@ You only need to do this **once**. It creates the Azure AI service that powers t
 3. Run:
 
    ```powershell
-   .\Deploy-RenameMyFiles.ps1 -SubscriptionId "<your-azure-subscription-id>"
+   .\scripts\Deploy-RenameMyFiles.ps1 -SubscriptionId "<your-azure-subscription-id>"
    ```
 
    Replace `<your-azure-subscription-id>` with your Azure subscription ID.  
@@ -60,7 +60,7 @@ $env:AZURE_OPENAI_KEY      = "your-api-key-here"
 Before renaming any real files, do a **dry run** to see what the tool would do:
 
 ```powershell
-.\Rename-MyFiles.ps1 -FolderPath "C:\Documents\MyUnfiledFolder" -WhatIf
+.\scripts\Rename-MyFiles.ps1 -FolderPath "C:\Documents\MyUnfiledFolder" -WhatIf
 ```
 
 This will show you proposed renames **without actually changing anything**. Review the output and make sure it looks sensible.
@@ -74,7 +74,7 @@ This will show you proposed renames **without actually changing anything**. Revi
 Once you are happy with the preview:
 
 ```powershell
-.\Rename-MyFiles.ps1 -FolderPath "C:\Documents\MyUnfiledFolder"
+.\scripts\Rename-MyFiles.ps1 -FolderPath "C:\Documents\MyUnfiledFolder"
 ```
 
 The script will:
@@ -110,6 +110,7 @@ Found 8 file(s). Processing...
 | Situation | What happens |
 |-----------|-------------|
 | Image files (`.jpg`, `.png`, etc.) | Skipped — the tool only reads text content |
+| PDF or Office documents | Limited — the tool currently uses the filename as context, so names may be generic |
 | Encrypted PDF or password-protected documents | Skipped — the file cannot be read |
 | Corrupted files | Skipped — the file cannot be read |
 | Very short or empty files | The AI may produce a generic or imperfect name |
@@ -140,7 +141,7 @@ Azure OpenAI charges per token (roughly per word). A typical letter or invoice u
 If you no longer need the tool and want to stop any future costs:
 
 ```powershell
-.\Remove-RenameMyFilesResources.ps1 -SubscriptionId "<your-azure-subscription-id>"
+.\scripts\Remove-RenameMyFilesResources.ps1 -SubscriptionId "<your-azure-subscription-id>"
 ```
 
 This permanently deletes the Azure resource group and everything in it. You will be asked to confirm before anything is deleted.

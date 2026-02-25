@@ -1,6 +1,9 @@
 # Rename My Files
 
 > **Single purpose:** Point at a folder of files and automatically rename them based on their content using AI — saving you time and making your files easier to find.
+# Rename My Files
+
+> **Single purpose:** Point at a folder of files and automatically rename them based on their content using AI — saving you time and making your files easier to find.
 
 ---
 
@@ -56,7 +59,7 @@ Acme Ltd Contract Renewal Notice - 13th January 2026.pdf
 Use the provided deployment script to provision all required Azure resources:
 
 ```powershell
-.\Deploy-RenameMyFiles.ps1 `
+.\scripts\Deploy-RenameMyFiles.ps1 `
     -SubscriptionId "<your-subscription-id>" `
     -ResourceGroupName "rg-rename-my-files" `
     -Location "eastus"
@@ -69,7 +72,7 @@ The script will:
 3. Deploy the GPT-4o mini model deployment.
 4. Output the endpoint and API key needed to run the rename script.
 
-> **Note:** You only need to deploy once. After that, run `Rename-MyFiles.ps1` as often as you like.
+> **Note:** You only need to deploy once. After that, run `scripts\Rename-MyFiles.ps1` as often as you like.
 
 ---
 
@@ -78,13 +81,13 @@ The script will:
 After deployment, run:
 
 ```powershell
-.\Rename-MyFiles.ps1 -FolderPath "C:\MyDocuments\Unfiled"
+.\scripts\Rename-MyFiles.ps1 -FolderPath "C:\MyDocuments\Unfiled"
 ```
 
 To preview changes without renaming (dry-run mode):
 
 ```powershell
-.\Rename-MyFiles.ps1 -FolderPath "C:\MyDocuments\Unfiled" -WhatIf
+.\scripts\Rename-MyFiles.ps1 -FolderPath "C:\MyDocuments\Unfiled" -WhatIf
 ```
 
 ### Parameters
@@ -100,12 +103,19 @@ To preview changes without renaming (dry-run mode):
 
 ---
 
+## Current Limitations
+
+- Plain text files are fully supported.
+- PDF and Office files currently use the filename as context (no real text extraction yet).
+
+---
+
 ## Tearing Down Resources
 
 To remove all Azure resources when you no longer need them:
 
 ```powershell
-.\Remove-RenameMyFilesResources.ps1 `
+.\scripts\Remove-RenameMyFilesResources.ps1 `
     -SubscriptionId "<your-subscription-id>" `
     -ResourceGroupName "rg-rename-my-files"
 ```
@@ -132,10 +142,11 @@ For a folder of 100 typical documents (letters, invoices, etc.), expect to spend
 ```
 rename-my-files/
 ├── README.md                          # This file (technical audience)
-├── copilot-instructions.md            # Rules for Copilot in this repo
-├── Rename-MyFiles.ps1                 # Main rename script
-├── Deploy-RenameMyFiles.ps1           # Azure resource deployment script
-├── Remove-RenameMyFilesResources.ps1  # Azure resource teardown script
+├── .github/                           # Repo instructions and prompts
+├── scripts/
+│   ├── Rename-MyFiles.ps1             # Main rename script
+│   ├── Deploy-RenameMyFiles.ps1       # Azure resource deployment script
+│   └── Remove-RenameMyFilesResources.ps1  # Azure resource teardown script
 ├── infra/
 │   └── main.bicep                     # Bicep template for Azure resources
 └── docs/
