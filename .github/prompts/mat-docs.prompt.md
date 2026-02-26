@@ -1,6 +1,6 @@
 ---
 description: Update README and docs to match the current implementation.
-agent: RMF Tech Writer
+agent: MAT Tech Writer
 argument-hint: "docs to update"
 ---
 

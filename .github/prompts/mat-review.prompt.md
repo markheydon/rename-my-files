@@ -1,6 +1,6 @@
 ---
 description: Review changes for quality, scope, and safety.
-agent: RMF QA
+agent: MAT QA
 argument-hint: "optional review focus"
 ---
 

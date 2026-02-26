@@ -1,5 +1,5 @@
 ---
-name: RMF Implementer
+name: MAT PowerShell Implementer
 description: Implement PowerShell changes for Rename My Files.
 ---
 

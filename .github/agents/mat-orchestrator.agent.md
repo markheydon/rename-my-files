@@ -1,5 +1,5 @@
 ---
-name: RMF Orchestrator
+name: MAT Orchestrator
 description: Planner and task gatekeeper for Rename My Files.
 ---
 
@@ -17,6 +17,6 @@ description: Planner and task gatekeeper for Rename My Files.
 
 ## Inputs
 
-- docs/SCOPE.md
-- docs/IMPLEMENTATION_PLAN.md
-- docs/RUNBOOK.md
+- `docs/SCOPE.md`
+- `docs/IMPLEMENTATION_PLAN.md`
+- `docs/RUNBOOK.md`

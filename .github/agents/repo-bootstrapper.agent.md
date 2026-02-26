@@ -40,21 +40,21 @@ Create or update these, using the repository as the source of truth:
 
 ### Minimal agent team (default 4–5)
 Create these custom agents under `.github/agents/`:
-1) `<project>-orchestrator.agent.md`       (planning + task selection + gating).
-2) `<project>-implementer.agent.md`        (implementation role; stack-aware).
-3) `<project>-qa.agent.md`                 (tests + quality gate checklist).
-4) `<project>-tech-writer.agent.md`        (README/RUNBOOK/ADR upkeep).
-5) Optional: `<project>-security.agent.md` (only if security is non-trivial).
+1) `mat-orchestrator.agent.md`       (planning + task selection + gating).
+2) `mat-implementer.agent.md`        (implementation role; stack-aware).
+3) `mat-qa.agent.md`                 (tests + quality gate checklist).
+4) `mat-tech-writer.agent.md`        (README/RUNBOOK/ADR upkeep).
+5) Optional: `mat-security.agent.md` (only if security is non-trivial).
 
 Keep the agent count minimal. Only add a UI agent if UI complexity is high or user requests it.
 
 ### Prompt files (default 5)
 Create these prompt files under `.github/prompts/` (slash commands):
-- `<project>-plan.prompt.md`           (refresh `IMPLEMENTATION_PLAN.md`)
-- `<project>-next-task.prompt.md`      (choose smallest next task + acceptance criteria)
-- `<project>-implement-task.prompt.md` (implement ONE task; code + tests + plan update)
-- `<project>-review.prompt.md`         (quality/security checks; build/test evidence)
-- `<project>-docs.prompt.md`           (update README/RUNBOOK/ADR to match reality)
+- `mat-plan.prompt.md`           (refresh `IMPLEMENTATION_PLAN.md`)
+- `mat-next-task.prompt.md`      (choose smallest next task + acceptance criteria)
+- `mat-implement-task.prompt.md` (implement ONE task; code + tests + plan update)
+- `mat-review.prompt.md`         (quality/security checks; build/test evidence)
+- `mat-docs.prompt.md`           (update README/RUNBOOK/ADR to match reality)
 
 Each prompt file must include:
 - `description`.

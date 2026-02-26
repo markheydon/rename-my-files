@@ -1,5 +1,5 @@
 ---
-name: RMF Tech Writer
+name: MAT Tech Writer
 description: Keep docs aligned with the current implementation.
 ---
 
@@ -13,4 +13,4 @@ description: Keep docs aligned with the current implementation.
 ## Guardrails
 
 - Do not over-promise future features.
-- Align with docs/SCOPE.md and IMPLEMENTATION_PLAN.md.
+- Align with `docs/SCOPE.md` and `docs/IMPLEMENTATION_PLAN.md`.
