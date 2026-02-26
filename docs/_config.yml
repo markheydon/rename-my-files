@@ -1,6 +1,6 @@
 title: Rename My Files
 description: Automatically rename your files with AI — turn scan0042.pdf into something useful
-baseurl: ""
+baseurl: "/rename-my-files"
 url: "https://markheydon.github.io/rename-my-files"
 
 remote_theme: just-the-docs/just-the-docs
