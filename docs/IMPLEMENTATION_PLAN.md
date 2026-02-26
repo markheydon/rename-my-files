@@ -1,9 +1,14 @@
 # Implementation Plan
 
-This plan breaks the MVP into small, testable tasks. Update it when the code changes.
+This plan breaks work into small, testable tasks. Update it when the code changes.
 
-## Current State Snapshot
+## Current State Snapshot (Post-MVP)
 
+**MVP Status:** ✅ Complete — all core features are functional and documented.
+
+**Active Development:** Phase 6 - Enhanced Content Extraction (PDF priority, Office secondary)
+
+### What Works Now:
 - Scripts live under `scripts/` and run locally with PowerShell 7.
 - `Rename-MyFiles.ps1` calls Azure OpenAI REST API directly — already cross-platform.
 - `Deploy-RenameMyFiles.ps1` uses Azure CLI (`az`) for resource deployment — cross-platform with built-in Bicep support.
@@ -13,8 +18,12 @@ This plan breaks the MVP into small, testable tasks. Update it when the code cha
 - Per-file errors are handled without stopping the batch.
 - Filename sanitization removes invalid characters and trims trailing dots.
 - Collision handling appends a numeric suffix.
-- PDF and Office extraction are placeholders (use filename as context).
+- Text files are extracted with 8000 character limit.
 - A summary is printed with renamed and skipped counts.
+
+### Known Limitations (Next to Address):
+- PDF extraction uses placeholder logic (returns filename as context).
+- Office document extraction uses placeholder logic (returns filename as context).
 
 ## Phase 0 - Cross-Platform Azure Tooling Migration
 
@@ -71,9 +80,11 @@ This plan breaks the MVP into small, testable tasks. Update it when the code cha
 
 ## Phase 3 - Content Extraction
 
-- [ ] Replace PDF placeholder logic with real text extraction (future enhancement).
-- [ ] Replace Office placeholder logic with real text extraction (future enhancement).
 - [x] Add a size/length limit to reduce content sent to Azure OpenAI (8000 chars implemented).
+- [x] Implement placeholder logic for PDF files (returns filename as context).
+- [x] Implement placeholder logic for Office documents (returns filename as context).
+
+**Note:** Real PDF and Office extraction moved to Phase 6 (Post-MVP).
 
 ## Phase 4 - AI Naming and Sanitization
 
@@ -119,14 +130,50 @@ All MVP requirements from `docs/SCOPE.md` are satisfied:
 - ✅ Collision handling (numeric suffix)
 - ✅ Documentation describes current behaviour and limitations
 
-## Future Enhancements (Out of Scope for MVP)
+---
 
-These features are documented as placeholders but not required for MVP:
+## Phase 6 - Post-MVP: Enhanced Content Extraction
 
-- [ ] Native PDF text extraction (currently uses filename as context)
-- [ ] Native Office document text extraction (currently uses filename as context)
+**Goal:** Replace placeholder extraction logic with real text extraction for PDF and Office documents to improve AI-generated filename quality.
+
+### PDF Text Extraction (Priority)
+
+- [ ] Research and select PDF extraction approach (cross-platform, PowerShell-compatible)
+  - Options: PdfPig (.NET library), pdftotext (external utility), iTextSharp, Azure Document Intelligence
+  - Criteria: Cross-platform support, ease of installation, licensing, error handling
+- [ ] Implement chosen PDF extraction solution in `Get-FileContentAsText` function
+  - Replace placeholder logic at line ~92-99 in `Rename-MyFiles.ps1`
+  - Handle malformed/encrypted PDFs gracefully (fall back to filename context)
+  - Maintain 8000 character limit for content sent to Azure OpenAI
+- [ ] Add prerequisite documentation for PDF extraction dependencies (if required)
+- [ ] Test with sample PDF files (text-based PDFs, scanned PDFs, encrypted PDFs)
+- [ ] Update user guide with PDF extraction capabilities and limitations
+
+### Office Document Text Extraction (Secondary)
+
+- [ ] Research and select Office extraction approach (cross-platform, PowerShell-compatible)
+  - Options: Open XML SDK, DocumentFormat.OpenXml, LibreOffice CLI, Azure Document Intelligence
+  - Criteria: Cross-platform support (.docx, .xlsx, .pptx minimum), ease of installation, licensing
+- [ ] Implement chosen Office extraction solution in `Get-FileContentAsText` function
+  - Replace placeholder logic at line ~102-106 in `Rename-MyFiles.ps1`
+  - Handle corrupted/password-protected documents gracefully
+  - Maintain 8000 character limit for content sent to Azure OpenAI
+- [ ] Add prerequisite documentation for Office extraction dependencies (if required)
+- [ ] Test with sample Office documents (.docx, .xlsx, .pptx formats)
+- [ ] Update user guide with Office document extraction capabilities and limitations
+
+### Validation
+
+- [ ] Verify cross-platform behaviour (Windows, macOS, Linux)
+- [ ] Confirm error handling does not break batch processing
+- [ ] Update IMPLEMENTATION_PLAN.md to reflect completion
+
+## Future Enhancements (Out of Scope for Current Phase)
+
+These features are documented as potential future work but not planned for immediate implementation:
+
 - [ ] Recursive subfolder processing
-- [ ] Batch capacity optimization for large folders (increase TPM quota)
+- [ ] Batch capacity optimisation for large folders (increase TPM quota)
 - [ ] Alternative AI backends (non-Azure providers)
 - [ ] GUI or web interface
 
@@ -140,3 +187,5 @@ These features are documented as placeholders but not required for MVP:
 - Bicep support is built into Azure CLI (no separate installation needed).
 - Soft-deleted Azure OpenAI resources are automatically restored during redeployment via `restore: true` property.
 - Users understand the data residency implications of GlobalStandard deployment (documented in ADR-0003).
+- PDF and Office extraction must work cross-platform (Windows, macOS, Linux) without requiring commercial licenses.
+- Content extraction solutions should prefer native .NET libraries over external CLI tools for better portability.
