@@ -16,7 +16,7 @@
     The name of the resource group to delete. Defaults to 'rg-rename-my-files'.
 
 .PARAMETER Force
-    Skips the confirmation prompt. Use with caution — deletion is irreversible.
+    Skips the confirmation prompt. Use with caution -- deletion is irreversible.
 
 .EXAMPLE
     .\Remove-RenameMyFilesResources.ps1 -SubscriptionId "00000000-0000-0000-0000-000000000000"
@@ -55,11 +55,11 @@ param (
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-Write-Host 'Rename My Files — Resource Removal' -ForegroundColor Cyan
-Write-Host '────────────────────────────────────' -ForegroundColor Cyan
-Write-Host " Subscription  : $SubscriptionId"
-Write-Host " Resource Group: $ResourceGroupName"
-Write-Host ''
+Write-Output 'Rename My Files - Resource Removal'
+Write-Output '------------------------------------'
+Write-Output " Subscription  : $SubscriptionId"
+Write-Output " Resource Group: $ResourceGroupName"
+Write-Output ''
 
 # Check Azure CLI is installed.
 if (-not (Get-Command az -ErrorAction SilentlyContinue)) {
@@ -74,21 +74,21 @@ try {
     
     if (-not $currentAccount -or $currentAccount.id -ne $SubscriptionId) {
         if (-not $currentAccount) {
-            Write-Host 'Not logged in to Azure. Initiating login...' -ForegroundColor Cyan
+            Write-Output 'Not logged in to Azure. Initiating login...'
             az login --use-device-code | Out-Null
             if ($LASTEXITCODE -ne 0) {
                 throw "Azure login failed."
             }
         }
         
-        Write-Host "Setting subscription to: $SubscriptionId" -ForegroundColor Cyan
+        Write-Output "Setting subscription to: $SubscriptionId"
         az account set --subscription $SubscriptionId 2>&1 | Out-Null
         if ($LASTEXITCODE -ne 0) {
             throw "Failed to set subscription. Verify subscription ID is correct and you have access."
         }
     }
     
-    Write-Host "Using subscription: $SubscriptionId" -ForegroundColor Green
+    Write-Output "Using subscription: $SubscriptionId"
 }
 catch {
     throw "Failed to authenticate with Azure: $_"
@@ -99,32 +99,32 @@ $rgJson = az group show --name $ResourceGroupName 2>$null
 $rg = if ($rgJson) { $rgJson | ConvertFrom-Json } else { $null }
 
 if (-not $rg) {
-    Write-Host "Resource group '$ResourceGroupName' does not exist. Nothing to remove." -ForegroundColor Yellow
+    Write-Output "Resource group '$ResourceGroupName' does not exist. Nothing to remove."
     return
 }
 
 # List resources for information.
-Write-Host ''
-Write-Host 'The following resource group and ALL resources within it will be permanently deleted:' -ForegroundColor Yellow
-Write-Host "  Resource group: $ResourceGroupName (location: $($rg.location))" -ForegroundColor Yellow
+Write-Output ''
+Write-Warning 'The following resource group and ALL resources within it will be permanently deleted:'
+Write-Warning "  Resource group: $ResourceGroupName (location: $($rg.location))"
 
 $resourcesJson = az resource list --resource-group $ResourceGroupName --output json 2>$null
 $resources = if ($resourcesJson) { $resourcesJson | ConvertFrom-Json } else { @() }
 
 if ($resources -is [object[]] -and $resources.Count -gt 0) {
-    Write-Host '  Resources:' -ForegroundColor Yellow
+    Write-Warning '  Resources:'
     foreach ($resource in $resources) {
-        Write-Host "    • $($resource.name) [$($resource.type)]" -ForegroundColor Yellow
+        Write-Warning "    * $($resource.name) [$($resource.type)]"
     }
 }
 elseif ($resources -is [psobject]) {
-    Write-Host '  Resources:' -ForegroundColor Yellow
-    Write-Host "    • $($resources.name) [$($resources.type)]" -ForegroundColor Yellow
+    Write-Warning '  Resources:'
+    Write-Warning "    * $($resources.name) [$($resources.type)]"
 }
 else {
-    Write-Host '  (no resources found in this group)' -ForegroundColor Yellow
+    Write-Warning '  (no resources found in this group)'
 }
-Write-Host ''
+Write-Output ''
 
 # Confirm and delete.
 $confirmMessage = "Permanently delete resource group '$ResourceGroupName' and all its resources?"
@@ -136,13 +136,13 @@ if ($PSCmdlet.ShouldProcess($ResourceGroupName, $confirmMessage)) {
         $proceed = $PSCmdlet.ShouldContinue($confirmMessage, 'Confirm Resource Group Deletion')
     }
     if ($proceed) {
-        Write-Host "Deleting resource group '$ResourceGroupName'..." -ForegroundColor Cyan
+        Write-Output "Deleting resource group '$ResourceGroupName'..."
         try {
             az group delete --name $ResourceGroupName --yes --no-wait | Out-Null
             if ($LASTEXITCODE -ne 0) {
                 throw "Delete command failed with exit code $LASTEXITCODE"
             }
-            Write-Host "Resource group '$ResourceGroupName' is being deleted (this may take a few minutes)." -ForegroundColor Green
+            Write-Output "Resource group '$ResourceGroupName' is being deleted (this may take a few minutes)."
         }
         catch {
             Write-Error "Failed to delete resource group '$ResourceGroupName': $_"
@@ -150,6 +150,6 @@ if ($PSCmdlet.ShouldProcess($ResourceGroupName, $confirmMessage)) {
         }
     }
     else {
-        Write-Host 'Deletion cancelled.' -ForegroundColor Yellow
+        Write-Output 'Deletion cancelled.'
     }
 }

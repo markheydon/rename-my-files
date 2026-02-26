@@ -85,7 +85,7 @@ function Get-FileTextContent {
 
         switch ($extension) {
             { $_ -in '.txt', '.md', '.csv', '.log', '.json', '.xml', '.html', '.htm', '.yaml', '.yml' } {
-                # Plain text — read directly.
+                # Plain text -- read directly.
                 return Get-Content -LiteralPath $File.FullName -Raw -Encoding UTF8
             }
 
@@ -107,7 +107,7 @@ function Get-FileTextContent {
             }
 
             default {
-                # Unsupported file type — skip it.
+                # Unsupported file type -- skip it.
                 Write-Verbose "Unsupported file type '$extension' for file: $($File.Name)"
                 return $null
             }
@@ -149,12 +149,12 @@ filename for a document based on its content.
 Rules:
 - Identify the document's subject, sender, recipient, and any reliable date you can infer.
 - Propose a filename that would make sense to a human user scanning a folder.
-- Do NOT include the file extension — that will be added by the caller.
+- Do NOT include the file extension -- that will be added by the caller.
 - Use title case. Use hyphens or spaces as separators (spaces are fine).
 - Keep the name concise but descriptive (aim for under 80 characters).
 - Avoid special characters that are invalid on Windows filesystems: \ / : * ? " < > |
 - If you cannot reliably determine specific details, still propose the best descriptive name you can.
-- Respond with ONLY the proposed filename — no explanation, no punctuation at the end.
+- Respond with ONLY the proposed filename -- no explanation, no punctuation at the end.
 
 Examples of good output:
   Acme Ltd Contract Renewal Notice - 13th January 2026
@@ -288,16 +288,16 @@ if ([string]::IsNullOrWhiteSpace($AzureOpenAIKey)) {
 }
 
 $resolvedFolder = Resolve-Path -LiteralPath $FolderPath
-Write-Host "Scanning folder: $resolvedFolder" -ForegroundColor Cyan
+Write-Output "Scanning folder: $resolvedFolder"
 
 $files = Get-ChildItem -LiteralPath $resolvedFolder -File
 
 if ($files.Count -eq 0) {
-    Write-Host 'No files found in the specified folder.' -ForegroundColor Yellow
+    Write-Output 'No files found in the specified folder.'
     return
 }
 
-Write-Host "Found $($files.Count) file(s). Processing..." -ForegroundColor Cyan
+Write-Output "Found $($files.Count) file(s). Processing..."
 
 $countRenamed  = 0
 $countSkipped  = 0
@@ -311,7 +311,7 @@ foreach ($file in $files) {
     if ($null -eq $content) {
         $skippedFiles.Add([PSCustomObject]@{ Name = $file.Name; Reason = 'Unsupported or unreadable file type' })
         $countSkipped++
-        Write-Host "  SKIPPED  $($file.Name) — unsupported or unreadable" -ForegroundColor DarkYellow
+        Write-Output "  SKIPPED  $($file.Name) -- unsupported or unreadable"
         continue
     }
 
@@ -326,7 +326,7 @@ foreach ($file in $files) {
     if ($null -eq $proposed) {
         $skippedFiles.Add([PSCustomObject]@{ Name = $file.Name; Reason = 'Azure AI call failed' })
         $countSkipped++
-        Write-Host "  SKIPPED  $($file.Name) — Azure AI call failed" -ForegroundColor DarkYellow
+        Write-Output "  SKIPPED  $($file.Name) -- Azure AI call failed"
         continue
     }
 
@@ -335,7 +335,7 @@ foreach ($file in $files) {
     if ($null -eq $sanitised) {
         $skippedFiles.Add([PSCustomObject]@{ Name = $file.Name; Reason = 'AI returned an unusable filename' })
         $countSkipped++
-        Write-Host "  SKIPPED  $($file.Name) — AI returned an unusable filename" -ForegroundColor DarkYellow
+        Write-Output "  SKIPPED  $($file.Name) -- AI returned an unusable filename"
         continue
     }
 
@@ -352,37 +352,37 @@ foreach ($file in $files) {
         try {
             Rename-Item -LiteralPath $file.FullName -NewName $newName -ErrorAction Stop
             $countRenamed++
-            Write-Host "  RENAMED  $($file.Name)  →  $newName" -ForegroundColor Green
+            Write-Output "  RENAMED  $($file.Name)  ->  $newName"
         }
         catch {
             $reason = "Rename failed: $($_.Exception.Message)"
             $skippedFiles.Add([PSCustomObject]@{ Name = $file.Name; Reason = $reason })
             $countSkipped++
-            Write-Host "  SKIPPED  $($file.Name) — $reason" -ForegroundColor DarkYellow
+            Write-Output "  SKIPPED  $($file.Name) -- $reason"
         }
     }
     else {
-        # -WhatIf path — ShouldProcess already printed the WhatIf message.
-        Write-Host "  PROPOSED $($file.Name)  →  $newName" -ForegroundColor Cyan
+        # -WhatIf path -- ShouldProcess already printed the WhatIf message.
+        Write-Output "  PROPOSED $($file.Name)  ->  $newName"
     }
 }
 
 # ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
-Write-Host ''
-Write-Host '─────────────────────────────────────' -ForegroundColor Cyan
-Write-Host ' Summary' -ForegroundColor Cyan
-Write-Host '─────────────────────────────────────' -ForegroundColor Cyan
-Write-Host " Files scanned : $($files.Count)"
-Write-Host " Files renamed : $countRenamed"     -ForegroundColor Green
-Write-Host " Files skipped : $countSkipped"     -ForegroundColor $(if ($countSkipped -gt 0) { 'Yellow' } else { 'White' })
+Write-Output ''
+Write-Output '-------------------------------------'
+Write-Output ' Summary'
+Write-Output '-------------------------------------'
+Write-Output " Files scanned : $($files.Count)"
+Write-Output " Files renamed : $countRenamed"
+Write-Output " Files skipped : $countSkipped"
 
 if ($skippedFiles.Count -gt 0) {
-    Write-Host ''
-    Write-Host ' Skipped files:' -ForegroundColor Yellow
+    Write-Output ''
+    Write-Output ' Skipped files:'
     foreach ($skipped in $skippedFiles) {
-        Write-Host "   • $($skipped.Name) — $($skipped.Reason)" -ForegroundColor DarkYellow
+        Write-Output "   * $($skipped.Name) -- $($skipped.Reason)"
     }
 }
-Write-Host '─────────────────────────────────────' -ForegroundColor Cyan
+Write-Output '-------------------------------------'

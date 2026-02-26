@@ -1,0 +1,61 @@
+name: Validate PowerShell
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'scripts/**/*.ps1'
+      - 'PSScriptAnalyzerSettings.psd1'
+      - '.github/workflows/validate-powershell.yml'
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  lint-powershell:
+    name: Lint PowerShell Scripts
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Install PSScriptAnalyzer
+        shell: pwsh
+        run: |
+          Write-Host "Installing PSScriptAnalyzer..."
+          Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser -Repository PSGallery
+          Import-Module PSScriptAnalyzer
+          Write-Host "✓ PSScriptAnalyzer installed"
+      
+      - name: Run PSScriptAnalyzer
+        shell: pwsh
+        run: |
+          Write-Host "Running PSScriptAnalyzer on scripts/*.ps1..."
+          Write-Host ""
+          
+          $results = Invoke-ScriptAnalyzer -Path ./scripts -Settings ./PSScriptAnalyzerSettings.psd1 -Recurse
+          
+          if ($results) {
+            $results | Format-Table -AutoSize
+            Write-Host ""
+            
+            $errors = $results | Where-Object Severity -eq 'Error'
+            $warnings = $results | Where-Object Severity -eq 'Warning'
+            
+            Write-Host "Found $($errors.Count) error(s) and $($warnings.Count) warning(s)"
+            Write-Host ""
+            
+            if ($errors.Count -gt 0) {
+              Write-Error "✗ PSScriptAnalyzer found $($errors.Count) error(s). Build failed."
+              exit 1
+            }
+            
+            if ($warnings.Count -gt 0) {
+              Write-Warning "⚠️  PSScriptAnalyzer found $($warnings.Count) warning(s). Consider fixing before merge."
+            }
+          } else {
+            Write-Host "✓ No PSScriptAnalyzer issues found"
+          }

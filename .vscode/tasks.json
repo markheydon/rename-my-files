@@ -1,0 +1,42 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Lint PowerShell (PSScriptAnalyzer)",
+            "type": "shell",
+            "command": "pwsh",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-Command",
+                "Invoke-ScriptAnalyzer -Path ./scripts -Settings ./PSScriptAnalyzerSettings.psd1 -Recurse"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "Validate Bicep (az bicep lint)",
+            "type": "shell",
+            "command": "az",
+            "args": [
+                "bicep",
+                "lint",
+                "--file",
+                "infra/main.bicep"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "Validate Bicep (az bicep build)",
+            "type": "shell",
+            "command": "az",
+            "args": [
+                "bicep",
+                "build",
+                "--file",
+                "infra/main.bicep"
+            ],
+            "problemMatcher": []
+        }
+    ]
+}

@@ -52,6 +52,7 @@ Documentation must **not**:
 - Use parameter validation attributes (`[ValidateNotNullOrEmpty()]`, `[ValidateScript()]`, etc.).
 - Handle errors gracefully — a single bad file must never stop the entire batch.
 - Keep Azure AI interaction separated into its own function(s) for testability.
+- **Pass PSScriptAnalyzer with no errors** — run `Invoke-ScriptAnalyzer -Path .\scripts -Settings .\PSScriptAnalyzerSettings.psd1 -Recurse` before committing.
 
 ---
 
@@ -83,4 +84,5 @@ Before suggesting or generating any code, ask yourself:
 - Prefer updating docs alongside code changes.
 - Validation gates:
 	- Tests: none yet (do not invent). If tests are added later, run them by default.
-	- Lint: optional; only run if the repo adds a linter in the future.
+	- PowerShell linting: PSScriptAnalyzer runs on all PRs to `main` (errors fail the build, warnings inform).
+	- Bicep validation: `az bicep build` runs on all PRs to `main` (syntax errors fail the build).

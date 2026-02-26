@@ -1,0 +1,58 @@
+name: Validate Bicep
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'infra/**/*.bicep'
+      - '.github/workflows/validate-bicep.yml'
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  validate-bicep:
+    name: Validate Bicep Template
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+      
+      - name: Install Azure CLI
+        run: |
+          set -euo pipefail
+          curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+
+      - name: Bicep version
+        run: az bicep version
+
+      - name: Validate Bicep template
+        shell: bash
+        run: |
+          echo "Validating Bicep template: infra/main.bicep"
+          az bicep build --file infra/main.bicep --stdout
+          
+          if [ $? -eq 0 ]; then
+            echo "✓ Bicep validation passed"
+          else
+            echo "✗ Bicep validation failed"
+            exit 1
+          fi
+      
+      - name: Check Bicep linter warnings
+        shell: bash
+        run: |
+          echo "Checking for linter warnings..."
+          output=$(az bicep build --file infra/main.bicep 2>&1)
+          
+          if echo "$output" | grep -i "warning" > /dev/null; then
+            echo "⚠️  Linter warnings detected:"
+            echo "$output"
+            echo ""
+            echo "Consider fixing warnings before merging."
+          else
+            echo "✓ No linter warnings"
+          fi

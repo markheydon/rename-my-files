@@ -1,0 +1,10 @@
+# VS Code (user/workspace artifacts)
+.vscode/.history/
+.vscode/ipch/
+.vscode/*.log
+
+# PowerShell (local artifacts)
+powershell.log
+
+# Bicep build output (which we don't want)
+infra/main.json

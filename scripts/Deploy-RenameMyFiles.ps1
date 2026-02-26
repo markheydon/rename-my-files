@@ -64,12 +64,12 @@ if (-not (Test-Path -LiteralPath $bicepTemplatePath)) {
     throw "Bicep template not found at: $bicepTemplatePath"
 }
 
-Write-Host 'Rename My Files — Azure Deployment' -ForegroundColor Cyan
-Write-Host '────────────────────────────────────' -ForegroundColor Cyan
-Write-Host " Subscription  : $SubscriptionId"
-Write-Host " Resource Group: $ResourceGroupName"
-Write-Host " Location      : $Location"
-Write-Host ''
+Write-Output 'Rename My Files - Azure Deployment'
+Write-Output '------------------------------------'
+Write-Output " Subscription  : $SubscriptionId"
+Write-Output " Resource Group: $ResourceGroupName"
+Write-Output " Location      : $Location"
+Write-Output ''
 
 # Check Azure CLI is installed.
 if (-not (Get-Command az -ErrorAction SilentlyContinue)) {
@@ -84,21 +84,21 @@ try {
     
     if (-not $currentAccount -or $currentAccount.id -ne $SubscriptionId) {
         if (-not $currentAccount) {
-            Write-Host 'Not logged in to Azure. Initiating login...' -ForegroundColor Cyan
+            Write-Output 'Not logged in to Azure. Initiating login...'
             az login --use-device-code | Out-Null
             if ($LASTEXITCODE -ne 0) {
                 throw "Azure login failed."
             }
         }
         
-        Write-Host "Setting subscription to: $SubscriptionId" -ForegroundColor Cyan
+        Write-Output "Setting subscription to: $SubscriptionId"
         az account set --subscription $SubscriptionId 2>&1 | Out-Null
         if ($LASTEXITCODE -ne 0) {
             throw "Failed to set subscription. Verify subscription ID is correct and you have access."
         }
     }
     
-    Write-Host "Using subscription: $SubscriptionId" -ForegroundColor Green
+    Write-Output "Using subscription: $SubscriptionId"
 }
 catch {
     throw "Failed to authenticate with Azure: $_"
@@ -110,21 +110,21 @@ if ($PSCmdlet.ShouldProcess($ResourceGroupName, 'Create resource group')) {
     $rg = if ($rgJson) { $rgJson | ConvertFrom-Json } else { $null }
     
     if (-not $rg) {
-        Write-Host "Creating resource group '$ResourceGroupName' in '$Location'..." -ForegroundColor Cyan
+        Write-Output "Creating resource group '$ResourceGroupName' in '$Location'..."
         az group create --name $ResourceGroupName --location $Location --output json | Out-Null
         if ($LASTEXITCODE -ne 0) {
             throw "Failed to create resource group."
         }
-        Write-Host "Resource group created." -ForegroundColor Green
+        Write-Output 'Resource group created.'
     }
     else {
-        Write-Host "Resource group '$ResourceGroupName' already exists." -ForegroundColor Yellow
+        Write-Output "Resource group '$ResourceGroupName' already exists."
     }
 }
 
 # Deploy Bicep template.
 if ($PSCmdlet.ShouldProcess($ResourceGroupName, 'Deploy Bicep template')) {
-    Write-Host 'Deploying Azure resources (this may take a few minutes)...' -ForegroundColor Cyan
+    Write-Output 'Deploying Azure resources (this may take a few minutes)...'
 
     $deploymentName = "rename-my-files-$(Get-Date -Format 'yyyyMMddHHmmss')"
 
@@ -146,29 +146,29 @@ if ($PSCmdlet.ShouldProcess($ResourceGroupName, 'Deploy Bicep template')) {
             throw "Deployment finished with state: $($deployment.properties.provisioningState)"
         }
 
-        Write-Host 'Deployment succeeded!' -ForegroundColor Green
-        Write-Host ''
-        Write-Host '────────────────────────────────────' -ForegroundColor Cyan
-        Write-Host ' Next steps' -ForegroundColor Cyan
-        Write-Host '────────────────────────────────────' -ForegroundColor Cyan
-        Write-Host ' Set these environment variables before running Rename-MyFiles.ps1:' -ForegroundColor White
-        Write-Host ''
+        Write-Output 'Deployment succeeded!'
+        Write-Output ''
+        Write-Output '------------------------------------'
+        Write-Output ' Next steps'
+        Write-Output '------------------------------------'
+        Write-Output ' Set these environment variables before running Rename-MyFiles.ps1:'
+        Write-Output ''
 
         $endpoint = $deployment.properties.outputs.openAIEndpoint.value
-        Write-Host "  `$env:AZURE_OPENAI_ENDPOINT = '$endpoint'"
+        Write-Output "  `$env:AZURE_OPENAI_ENDPOINT = '$endpoint'"
 
-        Write-Host ''
-        Write-Host ' To retrieve your API key, run:' -ForegroundColor White
+        Write-Output ''
+        Write-Output ' To retrieve your API key, run:'
 
         $openAIName = $deployment.properties.outputs.openAIResourceName.value
-        Write-Host "  az cognitiveservices account keys list --name '$openAIName' --resource-group '$ResourceGroupName' --query key1 --output tsv"
-        Write-Host ''
-        Write-Host ' Then set:' -ForegroundColor White
-        Write-Host '  $env:AZURE_OPENAI_KEY = "<key from above>"'
-        Write-Host ''
-        Write-Host ' Run the rename script:' -ForegroundColor White
-        Write-Host '  .\scripts\Rename-MyFiles.ps1 -FolderPath "C:\YourFolder"'
-        Write-Host '────────────────────────────────────' -ForegroundColor Cyan
+        Write-Output "  az cognitiveservices account keys list --name '$openAIName' --resource-group '$ResourceGroupName' --query key1 --output tsv"
+        Write-Output ''
+        Write-Output ' Then set:'
+        Write-Output '  $env:AZURE_OPENAI_KEY = "<key from above>"'
+        Write-Output ''
+        Write-Output ' Run the rename script:'
+        Write-Output '  .\scripts\Rename-MyFiles.ps1 -FolderPath "C:\YourFolder"'
+        Write-Output '------------------------------------'
     }
     catch {
         Write-Error "Deployment failed: $_"

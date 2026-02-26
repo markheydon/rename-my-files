@@ -131,18 +131,18 @@ Example output:
 Scanning folder: C:\Documents\MyUnfiledFolder
 Found 8 file(s). Processing...
 
-  RENAMED  scan0042.pdf  →  Acme Ltd Invoice - February 2025.pdf
-  RENAMED  Document (3).docx  →  HMRC Self Assessment Tax Return 2024-25.docx
-  SKIPPED  photo.jpg — Unsupported or unreadable file type
-  RENAMED  letter.txt  →  Dr Smith Referral Letter - John Doe.txt
+   RENAMED  scan0042.pdf  ->  Acme Ltd Invoice - February 2025.pdf
+   RENAMED  Document (3).docx  ->  HMRC Self Assessment Tax Return 2024-25.docx
+   SKIPPED  photo.jpg -- Unsupported or unreadable file type
+   RENAMED  letter.txt  ->  Dr Smith Referral Letter - John Doe.txt
 
-─────────────────────────────────────
+-------------------------------------
  Summary
-─────────────────────────────────────
+-------------------------------------
  Files scanned : 8
  Files renamed : 3
  Files skipped : 1
-─────────────────────────────────────
+-------------------------------------
 ```
 
 ---

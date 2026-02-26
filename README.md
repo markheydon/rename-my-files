@@ -149,6 +149,34 @@ To remove all Azure resources when you no longer need them:
 
 ---
 
+## Development
+
+### Validating Bicep Templates
+
+Before making changes to [infra/main.bicep](infra/main.bicep), validate the template locally using the Azure CLI:
+
+```bash
+az bicep build --file infra/main.bicep
+```
+
+This checks for syntax errors and linting warnings. All PRs to `main` automatically run Bicep validation via GitHub Actions.
+
+### Linting PowerShell Scripts
+
+Before committing PowerShell changes, run PSScriptAnalyzer locally to catch issues early:
+
+```powershell
+# Install PSScriptAnalyzer (one-time setup)
+Install-Module -Name PSScriptAnalyzer -Scope CurrentUser
+
+# Lint all scripts using project settings
+Invoke-ScriptAnalyzer -Path .\scripts -Settings .\PSScriptAnalyzerSettings.psd1 -Recurse
+```
+
+This checks for errors and best-practice violations. All PRs to `main` automatically run PowerShell linting via GitHub Actions.
+
+---
+
 ## Repository Structure
 
 ```
