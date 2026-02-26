@@ -207,7 +207,9 @@ function Get-SanitisedFileName {
     # Remove characters invalid on Windows (and problematic on Unix).
     $sanitised = $ProposedName -replace '[\\/:*?"<>|]', ''
 
-    # Collapse multiple spaces/dashes, trim whitespace.
+    # Collapse multiple spaces/dashes, then trim whitespace and trailing dots.
+    $sanitised = $sanitised -replace ' {2,}', ' '
+    $sanitised = $sanitised -replace '-{2,}', '-'
     $sanitised = $sanitised.Trim().TrimEnd('.')
 
     if ([string]::IsNullOrWhiteSpace($sanitised)) {
