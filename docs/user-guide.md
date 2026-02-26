@@ -157,6 +157,10 @@ Found 8 file(s). Processing...
 | Corrupted files | Skipped — the file cannot be read |
 | Very short or empty files | The AI may produce a generic or imperfect name |
 | File with the same proposed name already exists | A numeric suffix is added (e.g. `-1`, `-2`) |
+| Proposed filename exceeds Windows limit (255 chars) | Name is truncated to fit the limit |
+| Proposed filename contains control characters, tabs, or newlines | These characters are removed entirely |
+| Proposed filename matches a Windows reserved device name (e.g. CON, PRN, NUL, COM1) | Name is made safe by appending _file |
+| Excess spaces | Multiple spaces are collapsed to a single space |
 
 - **AI names are suggestions.** The AI does its best but may occasionally produce imperfect names. Review the dry-run output before renaming important files.
 - **Only the filename changes.** The tool never modifies the content of any file.

@@ -207,13 +207,39 @@ function Get-SanitisedFileName {
     # Remove characters invalid on Windows (and problematic on Unix).
     $sanitised = $ProposedName -replace '[\\/:*?"<>|]', ''
 
-    # Collapse multiple spaces/dashes, then trim whitespace and trailing dots.
-    $sanitised = $sanitised -replace ' {2,}', ' '
+    # Remove control characters (ASCII < 32) and newlines.
+    $sanitised = ($sanitised.ToCharArray() | Where-Object { [int]$_ -ge 32 }) -join ''
+
+    # Normalise all whitespace (tabs, newlines, multiple spaces) to a single space.
+    $sanitised = $sanitised -replace '\s+', ' '
+
+    # Collapse multiple dashes, then trim whitespace and trailing dots.
     $sanitised = $sanitised -replace '-{2,}', '-'
     $sanitised = $sanitised.Trim().TrimEnd('.')
 
     if ([string]::IsNullOrWhiteSpace($sanitised)) {
         return $null
+    }
+
+    # Handle Windows reserved device names (CON, PRN, AUX, NUL, COM1..COM9, LPT1..LPT9)
+    $reserved = @('CON','PRN','AUX','NUL') + @(1..9 | ForEach-Object {"COM$_","LPT$_"})
+    $base = $sanitised
+    $suffixPattern = '-\d+$'
+    $suffix = ''
+    if ($sanitised -match $suffixPattern) {
+        $suffix = $Matches[0]
+        $base = $sanitised.Substring(0, $sanitised.Length - $suffix.Length)
+    }
+    if ($reserved -contains $base.ToUpperInvariant()) {
+        $base = "${base}_file"
+    }
+    $sanitised = $base + $suffix
+
+    # Truncate to fit within Windows filename limits (255 chars for filename, 260 for full path).
+    $maxLength = 255
+    if ($sanitised.Length -gt $maxLength) {
+        $baseLength = $maxLength - $suffix.Length
+        $sanitised = $sanitised.Substring(0, $baseLength) + $suffix
     }
     return $sanitised
 }

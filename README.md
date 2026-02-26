@@ -130,6 +130,10 @@ To preview changes without renaming (dry-run mode):
 
 - Plain text files are fully supported.
 - PDF and Office files currently use the filename as context (no real text extraction yet).
+- Proposed filenames longer than 255 characters are truncated to fit Windows limits.
+- Control characters (including tabs and newlines) are removed from proposed filenames.
+- Multiple consecutive spaces are collapsed to a single space.
+- Windows reserved device names (e.g. CON, PRN, NUL, COM1) are made safe by appending _file.
 
 ---
 

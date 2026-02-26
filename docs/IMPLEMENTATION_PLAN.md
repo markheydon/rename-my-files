@@ -78,7 +78,10 @@ This plan breaks the MVP into small, testable tasks. Update it when the code cha
 ## Phase 4 - AI Naming and Sanitization
 
 - [x] Ensure prompt produces filename-safe output.
-- [x] Add truncation rules for long filenames (sanitization implemented).
+- [x] Add truncation rules for long filenames (Windows filename length enforced in sanitization).
+- [x] Remove control characters, tabs, and newlines from filenames.
+- [x] Collapse excess whitespace to a single space.
+- [x] Make Windows reserved device names (e.g. CON, PRN, NUL, COM1) safe by appending _file.
 - [x] Confirm collisions are resolved without overwriting (numeric suffix implemented).
 
 ## Phase 5 - Reporting and Docs

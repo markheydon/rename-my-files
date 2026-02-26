@@ -129,21 +129,27 @@ Write-Host ''
 # Confirm and delete.
 $confirmMessage = "Permanently delete resource group '$ResourceGroupName' and all its resources?"
 
-if ($Force -or $PSCmdlet.ShouldProcess($ResourceGroupName, $confirmMessage)) {
-    Write-Host "Deleting resource group '$ResourceGroupName'..." -ForegroundColor Cyan
-
-    try {
-        az group delete --name $ResourceGroupName --yes --no-wait | Out-Null
-        if ($LASTEXITCODE -ne 0) {
-            throw "Delete command failed with exit code $LASTEXITCODE"
+# Always call ShouldProcess for safety/WhatIf. Use -Force only to suppress prompt.
+if ($PSCmdlet.ShouldProcess($ResourceGroupName, $confirmMessage)) {
+    $proceed = $true
+    if (-not $Force) {
+        $proceed = $PSCmdlet.ShouldContinue($confirmMessage, 'Confirm Resource Group Deletion')
+    }
+    if ($proceed) {
+        Write-Host "Deleting resource group '$ResourceGroupName'..." -ForegroundColor Cyan
+        try {
+            az group delete --name $ResourceGroupName --yes --no-wait | Out-Null
+            if ($LASTEXITCODE -ne 0) {
+                throw "Delete command failed with exit code $LASTEXITCODE"
+            }
+            Write-Host "Resource group '$ResourceGroupName' is being deleted (this may take a few minutes)." -ForegroundColor Green
         }
-        Write-Host "Resource group '$ResourceGroupName' is being deleted (this may take a few minutes)." -ForegroundColor Green
+        catch {
+            Write-Error "Failed to delete resource group '$ResourceGroupName': $_"
+            throw
+        }
     }
-    catch {
-        Write-Error "Failed to delete resource group '$ResourceGroupName': $_"
-        throw
+    else {
+        Write-Host 'Deletion cancelled.' -ForegroundColor Yellow
     }
-}
-else {
-    Write-Host 'Deletion cancelled.' -ForegroundColor Yellow
 }
