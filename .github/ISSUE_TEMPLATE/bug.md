@@ -15,10 +15,10 @@ A clear and concise description of what the bug is.
 2. 
 3. 
 
-### Expected Behavior
+### Expected Behaviour
 Describe what you expected to happen.
 
-### Actual Behavior
+### Actual Behaviour
 Describe what actually happened.
 
 ### Screenshots

@@ -1,0 +1,142 @@
+# Implementation Plan
+
+This plan breaks the MVP into small, testable tasks. Update it when the code changes.
+
+## Current State Snapshot
+
+- Scripts live under `scripts/` and run locally with PowerShell 7.
+- `Rename-MyFiles.ps1` calls Azure OpenAI REST API directly — already cross-platform.
+- `Deploy-RenameMyFiles.ps1` uses Azure CLI (`az`) for resource deployment — cross-platform with built-in Bicep support.
+- `Remove-RenameMyFilesResources.ps1` uses Azure CLI (`az`) for resource deletion.
+- Bicep template includes `restore: true` to handle soft-deleted resources automatically.
+- Dry-run uses `ShouldProcess` for `-WhatIf` behaviour.
+- Per-file errors are handled without stopping the batch.
+- Filename sanitization removes invalid characters and trims trailing dots.
+- Collision handling appends a numeric suffix.
+- PDF and Office extraction are placeholders (use filename as context).
+- A summary is printed with renamed and skipped counts.
+
+## Phase 0 - Cross-Platform Azure Tooling Migration
+
+**Issue:** Az PowerShell module requires separate Bicep installation, limiting cross-platform usability.
+
+**Solution:** Migrate deployment scripts to use Azure CLI (`az`), which has built-in Bicep support and works identically on Windows, macOS, and Linux.
+
+### Tasks:
+- [x] Update `Deploy-RenameMyFiles.ps1` to use `az` CLI commands instead of Az module cmdlets.
+  - [x] Replace `Connect-AzAccount` → `az login --use-device-code`
+  - [x] Replace `Set-AzContext` → `az account set --subscription`
+  - [x] Replace `Get-AzResourceGroup` → `az group show --name` (with error handling)
+  - [x] Replace `New-AzResourceGroup` → `az group create --name --location`
+  - [x] Replace `New-AzResourceGroupDeployment` → `az deployment group create --resource-group --template-file`
+  - [x] Parse JSON output from `az` commands using `ConvertFrom-Json`
+  - [x] Update instructions to reference API key retrieval via `az cognitiveservices account keys list`
+  - [x] Added Azure CLI prerequisite check (`Get-Command az`)
+  - [x] Tested on Windows with dry-run and full deployment
+  - Validation: Script successfully creates resource group and deploys Bicep template via Azure CLI
+- [x] Update `Remove-RenameMyFilesResources.ps1` to use `az` CLI commands.
+  - [x] Replace Azure authentication and context cmdlets with `az` equivalents
+  - [x] Replace `Get-AzResourceGroup` → `az group show --name`
+  - [x] Replace `Get-AzResource` → `az resource list --resource-group`
+  - [x] Replace `Remove-AzResourceGroup` → `az group delete --name`
+  - [x] Syntax validated successfully
+  - [x] Updated script `.NOTES` to reference Azure CLI instead of Az module
+  - Validation: Script ready for functional testing in live Azure environment
+- [x] Add `restore: true` to Bicep template to handle soft-deleted Azure OpenAI resources.
+  - [x] Added property to Azure OpenAI resource in `infra/main.bicep`
+  - [x] Bicep template validated (build + lint successful)
+  - [x] Created ADR-0004 documenting the decision
+  - [x] Added troubleshooting section to RUNBOOK.md with manual purge steps for edge cases
+  - Validation: Deployment automatically restores soft-deleted resources without errors
+- [x] Update documentation to reflect new prerequisites and behaviour.
+  - [x] Removed Az PowerShell module requirement from all scripts
+  - [x] Added Azure CLI installation requirement
+  - [x] Removed separate Bicep installation requirement (built into az CLI)
+  - [x] Updated README.md, user-guide.md, and RUNBOOK.md
+  - [x] Created ADR-0002: Use Azure CLI Instead of Azure PowerShell Module
+  - [x] Created ADR-0003: Use GlobalStandard Deployment Type for Azure OpenAI
+  - [x] Created ADR-0004: Use Restore Flag for Soft-Deleted Azure OpenAI Resources
+
+## Phase 1 - Baseline Verification
+
+- [x] Verify the README and docs refer to `scripts/` paths.
+- [x] Confirm `Rename-MyFiles.ps1` uses `ShouldProcess` for dry-run.
+- [x] Confirm Azure OpenAI calls are isolated in a single function.
+
+## Phase 2 - File Intake and Safety
+
+- [x] Validate folder path input and handle missing or empty folders.
+- [x] Confirm only top-level files are processed (no recursion).
+- [x] Ensure per-file error handling does not stop the batch.
+
+## Phase 3 - Content Extraction
+
+- [ ] Replace PDF placeholder logic with real text extraction (future enhancement).
+- [ ] Replace Office placeholder logic with real text extraction (future enhancement).
+- [x] Add a size/length limit to reduce content sent to Azure OpenAI (8000 chars implemented).
+
+## Phase 4 - AI Naming and Sanitization
+
+- [x] Ensure prompt produces filename-safe output.
+- [x] Add truncation rules for long filenames (Windows filename length enforced in sanitization).
+- [x] Remove control characters, tabs, and newlines from filenames.
+- [x] Collapse excess whitespace to a single space.
+- [x] Make Windows reserved device names (e.g. CON, PRN, NUL, COM1) safe by appending _file.
+- [x] Confirm collisions are resolved without overwriting (numeric suffix implemented).
+
+## Phase 5 - Reporting and Docs
+
+- [x] Update README.md prerequisites (Azure CLI instead of Az module)
+- [x] Update README.md with GlobalStandard deployment info and cost estimates
+- [x] Update user-guide.md prerequisites (Azure CLI instead of Az module)
+- [x] Update user-guide.md with region support and detailed cost estimates
+- [x] Update RUNBOOK.md prerequisites (Azure CLI instead of Az module)
+- [x] Remove all references to separate Bicep installation
+- [x] Create ADR-0002: Use Azure CLI Instead of Azure PowerShell Module
+- [x] Create ADR-0003: Use GlobalStandard Deployment Type for Azure OpenAI
+- [x] Create ADR-0004: Use Restore Flag for Soft-Deleted Azure OpenAI Resources
+- [x] Document data residency implications, deployment alternatives, and compliance guidance
+- [x] Document soft-delete troubleshooting in RUNBOOK.md
+
+## MVP Status
+
+**Phase 0 (Cross-Platform Azure Tooling):** ✅ Complete  
+**Phase 1 (Baseline Verification):** ✅ Complete  
+**Phase 2 (File Intake and Safety):** ✅ Complete  
+**Phase 3 (Content Extraction):** ✅ Complete for MVP (PDF/Office as future enhancements)  
+**Phase 4 (AI Naming and Sanitization):** ✅ Complete  
+**Phase 5 (Reporting and Docs):** ✅ Complete
+
+**Overall MVP Status:** ✅ **COMPLETE**
+
+All MVP requirements from `docs/SCOPE.md` are satisfied:
+- ✅ Read file contents from a single folder
+- ✅ Use Azure OpenAI to propose descriptive filenames
+- ✅ Rename files preserving original extension
+- ✅ Dry-run mode (`-WhatIf`)
+- ✅ Log renamed, skipped, and failed files
+- ✅ Per-file error handling (batch continues on failure)
+- ✅ Collision handling (numeric suffix)
+- ✅ Documentation describes current behaviour and limitations
+
+## Future Enhancements (Out of Scope for MVP)
+
+These features are documented as placeholders but not required for MVP:
+
+- [ ] Native PDF text extraction (currently uses filename as context)
+- [ ] Native Office document text extraction (currently uses filename as context)
+- [ ] Recursive subfolder processing
+- [ ] Batch capacity optimization for large folders (increase TPM quota)
+- [ ] Alternative AI backends (non-Azure providers)
+- [ ] GUI or web interface
+
+## Assumptions
+
+- No automated tests exist yet; validation is manual.
+- Azure OpenAI is the only AI backend.
+- Users supply credentials via environment variables or parameters.
+- PowerShell 7 is available on Windows, macOS, and Linux (cross-platform by default).
+- Azure CLI works consistently across Windows, macOS, and Linux.
+- Bicep support is built into Azure CLI (no separate installation needed).
+- Soft-deleted Azure OpenAI resources are automatically restored during redeployment via `restore: true` property.
+- Users understand the data residency implications of GlobalStandard deployment (documented in ADR-0003).

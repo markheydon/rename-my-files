@@ -1,0 +1,210 @@
+# User Guide
+
+This guide walks you through everything you need to use **Rename My Files** — a tool that automatically renames files with clear, descriptive names using AI.
+
+---
+
+## Prerequisites
+
+Before you begin, you will need:
+
+1. **PowerShell 7.2 or later** installed on your computer.
+   - [Download PowerShell](https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell)
+2. **An Azure account** (free to create at [azure.microsoft.com](https://azure.microsoft.com/free/)).
+3. **Azure CLI** installed:
+   - [Install Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli)
+   - Bicep support is built-in (no separate installation needed)
+
+---
+
+## ⚠️ Important: Data Residency and Processing Locations
+
+**Before you deploy, understand where your file data is processed:**
+
+This tool uses Azure OpenAI with **GlobalStandard** deployment type, which means:
+
+| Aspect | What Happens |
+|--------|-------------|
+| **File content at rest** | Stays in your Azure region (e.g., UK South) |
+| **File content during AI processing** | **May be sent to any Azure region** where the model is available |
+| **Processing duration** | Only milliseconds (during the API call) |
+| **Data storage** | Not stored after processing completes |
+| **Third parties** | Not shared; remains within Azure infrastructure |
+
+### Is This Right for You?
+
+✅ **Use Rename My Files if:**
+- You're comfortable with your data being processed across Azure's global infrastructure
+- Your organisation has no strict geographic data residency requirements
+- You value cost efficiency and broad region availability
+
+⚠️ **Talk to your IT or compliance team if:**
+- Your organisation requires all data processing to stay within EU member nations
+- Your organisation requires all data processing to stay within the United States
+- Your organisation requires data processing in a single specific region
+- You handle sensitive data with geographic compliance requirements
+
+### Alternative: DataZone Deployment
+
+If you need **strict geographic processing**, you can deploy with `DataZoneStandard` instead:
+- **EU data zone:** All data processed only within EU member nations
+- **US data zone:** All data processed only within US regions
+
+This requires deploying to an EU or US region. For details, see [Azure OpenAI Deployment Types](https://learn.microsoft.com/en-us/azure/ai-foundry/foundry-models/concepts/deployment-types?view=foundry-classic#choose-the-right-deployment-type) and refer to the [GlobalStandard Deployment Type decision document](../DECISIONS/ADR-0003-globalstandard-deployment-type.md).
+
+---
+
+## Step 1 — Deploy Azure Resources
+
+You only need to do this **once**. It creates the Azure AI service that powers the renaming.
+
+### Supported Regions
+
+This tool works in most Azure regions. uksouth is fully supported. For a complete list of supported regions, see the [Azure OpenAI model availability documentation](https://learn.microsoft.com/en-us/azure/ai-foundry/foundry-models/concepts/models-sold-directly-by-azure?view=foundry-classic&tabs=global-standard-aoai%2Cglobal-standard&pivots=azure-openai#global-standard-model-availability).
+
+### Deployment Steps
+
+1. Open a PowerShell 7 terminal.
+2. Navigate to the folder where you downloaded the Rename My Files scripts.
+3. Run:
+
+   ```powershell
+   .\scripts\Deploy-RenameMyFiles.ps1 -SubscriptionId "<your-azure-subscription-id>"
+   ```
+
+   Replace `<your-azure-subscription-id>` with your Azure subscription ID.  
+   (You can find this in the [Azure Portal](https://portal.azure.com) under **Subscriptions**.)
+
+4. When prompted, sign in to your Azure account.
+5. Wait for the deployment to finish (usually 2–5 minutes).
+6. At the end, the script will print instructions to retrieve your **API key** and **endpoint URL**.
+   Follow those instructions and note down the values.
+
+> **Tip:** If your organisation manages Azure, ask your IT administrator to run the deployment script on your behalf and provide you with the endpoint and API key.
+
+---
+
+## Step 2 — Configure Your API Key and Endpoint
+
+Set these as environment variables so the rename script can use them:
+
+```powershell
+$env:AZURE_OPENAI_ENDPOINT = "https://your-resource.openai.azure.com/"
+$env:AZURE_OPENAI_KEY      = "your-api-key-here"
+```
+
+> **Security note:** Do not share your API key or store it in a plain text file. Set it as an environment variable each session, or use a secure secrets manager.
+
+---
+
+## Step 3 — Preview Before Renaming (Recommended)
+
+Before renaming any real files, do a **dry run** to see what the tool would do:
+
+```powershell
+.\scripts\Rename-MyFiles.ps1 -FolderPath "C:\Documents\MyUnfiledFolder" -WhatIf
+```
+
+This will show you proposed renames **without actually changing anything**. Review the output and make sure it looks sensible.
+
+> **Safety tip:** Always test on a **small sample folder** first (e.g. copy 5–10 files to a test folder). Once you are confident, run on your full folder.
+
+---
+
+## Step 4 — Rename Your Files
+
+Once you are happy with the preview:
+
+```powershell
+.\scripts\Rename-MyFiles.ps1 -FolderPath "C:\Documents\MyUnfiledFolder"
+```
+
+The script will:
+- Read each file in the folder.
+- Ask Azure AI to suggest a descriptive name.
+- Rename the file, keeping the same extension.
+- Show a summary at the end.
+
+Example output:
+
+```
+Scanning folder: C:\Documents\MyUnfiledFolder
+Found 8 file(s). Processing...
+
+   RENAMED  scan0042.pdf  ->  Acme Ltd Invoice - February 2025.pdf
+   RENAMED  Document (3).docx  ->  HMRC Self Assessment Tax Return 2024-25.docx
+   SKIPPED  photo.jpg -- Unsupported or unreadable file type
+   RENAMED  letter.txt  ->  Dr Smith Referral Letter - John Doe.txt
+
+-------------------------------------
+ Summary
+-------------------------------------
+ Files scanned : 8
+ Files renamed : 3
+ Files skipped : 1
+-------------------------------------
+```
+
+---
+
+## Limitations and Caveats
+
+| Situation | What happens |
+|-----------|-------------|
+| Image files (`.jpg`, `.png`, etc.) | Skipped — the tool only reads text content |
+| PDF or Office documents | Limited — the tool currently uses the filename as context, so names may be generic |
+| Encrypted PDF or password-protected documents | Skipped — the file cannot be read |
+| Corrupted files | Skipped — the file cannot be read |
+| Very short or empty files | The AI may produce a generic or imperfect name |
+| File with the same proposed name already exists | A numeric suffix is added (e.g. `-1`, `-2`) |
+| Proposed filename exceeds Windows limit (255 chars) | Name is truncated to fit the limit |
+| Proposed filename contains control characters, tabs, or newlines | These characters are removed entirely |
+| Proposed filename matches a Windows reserved device name (e.g. CON, PRN, NUL, COM1) | Name is made safe by appending _file |
+| Excess spaces | Multiple spaces are collapsed to a single space |
+
+- **AI names are suggestions.** The AI does its best but may occasionally produce imperfect names. Review the dry-run output before renaming important files.
+- **Only the filename changes.** The tool never modifies the content of any file.
+- **Only files in the top-level folder are processed.** Sub-folders are not scanned.
+
+---
+
+## Cost
+
+> ⚠️ **Estimates only** — actual costs depend on file size and current Azure pricing. For the latest rates, see [Azure OpenAI Pricing](https://azure.microsoft.com/en-us/pricing/details/cognitive-services/openai-service/).
+
+**Deployment uses GlobalStandard pricing:**
+- **Input:** $0.15 per 1M tokens
+- **Output:** $0.60 per 1M tokens
+- **Idle cost:** $0.00 (pay-as-you-go, no standing charges)
+
+| Usage | Estimated Cost |
+|-------|----------------|
+| Per typical document (500–1,000 words) | **~$0.0001** (~0.01¢) |
+| 10 documents | **~$0.001** |
+| 100 documents | **~$0.015** |
+| 1,000 documents | **~$0.15** |
+| 10,000 documents | **~$1.50** |
+
+**Key points:**
+- You are only charged when you run the rename script — there is no cost when idle.
+- Larger documents consume more tokens and cost slightly more.
+- These estimates assume typical business documents (letters, invoices, reports).
+
+---
+
+## Removing Azure Resources
+
+If you no longer need the tool and want to stop any future costs:
+
+```powershell
+.\scripts\Remove-RenameMyFilesResources.ps1 -SubscriptionId "<your-azure-subscription-id>"
+```
+
+This permanently deletes the Azure resource group and everything in it. You will be asked to confirm before anything is deleted.
+
+---
+
+## Getting Help
+
+- Open a [GitHub Issue](https://github.com/markheydon/rename-my-files/issues) if you encounter a bug.
+- For Azure-related problems, check the [Azure OpenAI documentation](https://learn.microsoft.com/azure/ai-services/openai/).
