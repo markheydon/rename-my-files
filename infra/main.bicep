@@ -49,6 +49,7 @@ resource openAIAccount 'Microsoft.CognitiveServices/accounts@2023-10-01-preview'
   properties: {
     customSubDomainName: openAIResourceName
     publicNetworkAccess: 'Enabled'
+    restore: true
     // TODO: For a production or sensitive workload, consider restricting to a
     // private endpoint and disabling public network access.
   }

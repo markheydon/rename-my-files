@@ -6,8 +6,9 @@ This plan breaks the MVP into small, testable tasks. Update it when the code cha
 
 - Scripts live under `scripts/` and run locally with PowerShell 7.
 - `Rename-MyFiles.ps1` calls Azure OpenAI REST API directly — already cross-platform.
-- `Deploy-RenameMyFiles.ps1` uses Az PowerShell module — requires Bicep installed separately.
-- `Remove-RenameMyFilesResources.ps1` uses Az PowerShell module.
+- `Deploy-RenameMyFiles.ps1` uses Azure CLI (`az`) for resource deployment — cross-platform with built-in Bicep support.
+- `Remove-RenameMyFilesResources.ps1` uses Azure CLI (`az`) for resource deletion.
+- Bicep template includes `restore: true` to handle soft-deleted resources automatically.
 - Dry-run uses `ShouldProcess` for `-WhatIf` behaviour.
 - Per-file errors are handled without stopping the batch.
 - Filename sanitization removes invalid characters and trims trailing dots.
@@ -34,9 +35,12 @@ This plan breaks the MVP into small, testable tasks. Update it when the code cha
   - [x] Tested on Windows with dry-run and full deployment
   - Validation: Script successfully creates resource group and deploys Bicep template via Azure CLI
 - [ ] Update `Remove-RenameMyFilesResources.ps1` to use `az` CLI commands.
-  - Replace Azure authentication and context cmdlets with `az` equivalents
-  - Replace `Get-AzResource` → `az resource list --resource-group`
-  - Replace `Remove-AzResourceGroup` → `az group delete --name`
+  - [x] Replace Azure authentication and context cmdlets with `az` equivalents
+  - [x] Replace `Get-AzResourceGroup` → `az group show --name`
+  - [x] Replace `Get-AzResource` → `az resource list --resource-group`
+  - [x] Replace `Remove-AzResourceGroup` → `az group delete --name`
+  - [x] Syntax validated successfully
+  - Validation: Script ready for functional testing in live Azure environment
 - [x] Test script on Windows to ensure it works correctly.
   - Dry-run validation passed
   - Full deployment test passed (resource group and Bicep deployment via az CLI confirmed)
@@ -80,7 +84,9 @@ This plan breaks the MVP into small, testable tasks. Update it when the code cha
   - Removed all references to separate Bicep installation
   - Created ADR-0002: Use Azure CLI Instead of Azure PowerShell Module
   - Created ADR-0003: Use GlobalStandard Deployment Type for Azure OpenAI
+  - Created ADR-0004: Use Restore Flag for Soft-Deleted Azure OpenAI Resources
   - Documented data residency implications, deployment alternatives, and compliance guidance
+  - Documented soft-delete troubleshooting in RUNBOOK.md
 
 ## Assumptions
 

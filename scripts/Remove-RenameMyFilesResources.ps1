@@ -32,8 +32,8 @@
     Removes the specified resource group without prompting.
 
 .NOTES
-    Requires PowerShell 7.2 or later and the Az PowerShell module.
-    Install with: Install-Module -Name Az -Scope CurrentUser
+    Requires PowerShell 7.2 or later and the Azure CLI.
+    Install Azure CLI from: https://learn.microsoft.com/cli/azure/install-azure-cli
 
     This action is irreversible. All resources inside the resource group will be permanently deleted.
 #>
@@ -61,14 +61,33 @@ Write-Host " Subscription  : $SubscriptionId"
 Write-Host " Resource Group: $ResourceGroupName"
 Write-Host ''
 
+# Check Azure CLI is installed.
+if (-not (Get-Command az -ErrorAction SilentlyContinue)) {
+    throw "Azure CLI not found. Install from: https://learn.microsoft.com/cli/azure/install-azure-cli"
+}
+
 # Connect / set subscription.
 try {
-    $context = Get-AzContext
-    if (-not $context -or $context.Subscription.Id -ne $SubscriptionId) {
-        Write-Host 'Connecting to Azure...' -ForegroundColor Cyan
-        Connect-AzAccount -SubscriptionId $SubscriptionId | Out-Null
+    # Check current Azure CLI context.
+    $accountJson = az account show 2>$null
+    $currentAccount = if ($accountJson) { $accountJson | ConvertFrom-Json } else { $null }
+    
+    if (-not $currentAccount -or $currentAccount.id -ne $SubscriptionId) {
+        if (-not $currentAccount) {
+            Write-Host 'Not logged in to Azure. Initiating login...' -ForegroundColor Cyan
+            az login --use-device-code | Out-Null
+            if ($LASTEXITCODE -ne 0) {
+                throw "Azure login failed."
+            }
+        }
+        
+        Write-Host "Setting subscription to: $SubscriptionId" -ForegroundColor Cyan
+        az account set --subscription $SubscriptionId 2>&1 | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+            throw "Failed to set subscription. Verify subscription ID is correct and you have access."
+        }
     }
-    Set-AzContext -SubscriptionId $SubscriptionId | Out-Null
+    
     Write-Host "Using subscription: $SubscriptionId" -ForegroundColor Green
 }
 catch {
@@ -76,7 +95,9 @@ catch {
 }
 
 # Check the resource group exists.
-$rg = Get-AzResourceGroup -Name $ResourceGroupName -ErrorAction SilentlyContinue
+$rgJson = az group show --name $ResourceGroupName 2>$null
+$rg = if ($rgJson) { $rgJson | ConvertFrom-Json } else { $null }
+
 if (-not $rg) {
     Write-Host "Resource group '$ResourceGroupName' does not exist. Nothing to remove." -ForegroundColor Yellow
     exit 0
@@ -85,14 +106,20 @@ if (-not $rg) {
 # List resources for information.
 Write-Host ''
 Write-Host 'The following resource group and ALL resources within it will be permanently deleted:' -ForegroundColor Yellow
-Write-Host "  Resource group: $ResourceGroupName (location: $($rg.Location))" -ForegroundColor Yellow
+Write-Host "  Resource group: $ResourceGroupName (location: $($rg.location))" -ForegroundColor Yellow
 
-$resources = Get-AzResource -ResourceGroupName $ResourceGroupName
-if ($resources.Count -gt 0) {
+$resourcesJson = az resource list --resource-group $ResourceGroupName --output json 2>$null
+$resources = if ($resourcesJson) { $resourcesJson | ConvertFrom-Json } else { @() }
+
+if ($resources -is [object[]] -and $resources.Count -gt 0) {
     Write-Host '  Resources:' -ForegroundColor Yellow
     foreach ($resource in $resources) {
-        Write-Host "    • $($resource.Name) [$($resource.ResourceType)]" -ForegroundColor Yellow
+        Write-Host "    • $($resource.name) [$($resource.type)]" -ForegroundColor Yellow
     }
+}
+elseif ($resources -is [psobject]) {
+    Write-Host '  Resources:' -ForegroundColor Yellow
+    Write-Host "    • $($resources.name) [$($resources.type)]" -ForegroundColor Yellow
 }
 else {
     Write-Host '  (no resources found in this group)' -ForegroundColor Yellow
@@ -106,8 +133,11 @@ if ($Force -or $PSCmdlet.ShouldProcess($ResourceGroupName, $confirmMessage)) {
     Write-Host "Deleting resource group '$ResourceGroupName'..." -ForegroundColor Cyan
 
     try {
-        Remove-AzResourceGroup -Name $ResourceGroupName -Force | Out-Null
-        Write-Host "Resource group '$ResourceGroupName' has been successfully deleted." -ForegroundColor Green
+        az group delete --name $ResourceGroupName --yes --no-wait | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+            throw "Delete command failed with exit code $LASTEXITCODE"
+        }
+        Write-Host "Resource group '$ResourceGroupName' is being deleted (this may take a few minutes)." -ForegroundColor Green
     }
     catch {
         Write-Error "Failed to delete resource group '$ResourceGroupName': $_"
