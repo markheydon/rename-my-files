@@ -100,7 +100,7 @@ $rg = if ($rgJson) { $rgJson | ConvertFrom-Json } else { $null }
 
 if (-not $rg) {
     Write-Host "Resource group '$ResourceGroupName' does not exist. Nothing to remove." -ForegroundColor Yellow
-    exit 0
+    return
 }
 
 # List resources for information.
