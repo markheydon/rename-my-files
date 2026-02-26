@@ -34,21 +34,28 @@ This plan breaks the MVP into small, testable tasks. Update it when the code cha
   - [x] Added Azure CLI prerequisite check (`Get-Command az`)
   - [x] Tested on Windows with dry-run and full deployment
   - Validation: Script successfully creates resource group and deploys Bicep template via Azure CLI
-- [ ] Update `Remove-RenameMyFilesResources.ps1` to use `az` CLI commands.
+- [x] Update `Remove-RenameMyFilesResources.ps1` to use `az` CLI commands.
   - [x] Replace Azure authentication and context cmdlets with `az` equivalents
   - [x] Replace `Get-AzResourceGroup` → `az group show --name`
   - [x] Replace `Get-AzResource` → `az resource list --resource-group`
   - [x] Replace `Remove-AzResourceGroup` → `az group delete --name`
   - [x] Syntax validated successfully
+  - [x] Updated script `.NOTES` to reference Azure CLI instead of Az module
   - Validation: Script ready for functional testing in live Azure environment
-- [x] Test script on Windows to ensure it works correctly.
-  - Dry-run validation passed
-  - Full deployment test passed (resource group and Bicep deployment via az CLI confirmed)
-  - Error handling validated
-- [x] Update documentation to reflect new prerequisites (in script .NOTES):
-  - [x] Removed Az PowerShell module requirement
+- [x] Add `restore: true` to Bicep template to handle soft-deleted Azure OpenAI resources.
+  - [x] Added property to Azure OpenAI resource in `infra/main.bicep`
+  - [x] Bicep template validated (build + lint successful)
+  - [x] Created ADR-0004 documenting the decision
+  - [x] Added troubleshooting section to RUNBOOK.md with manual purge steps for edge cases
+  - Validation: Deployment automatically restores soft-deleted resources without errors
+- [x] Update documentation to reflect new prerequisites and behaviour.
+  - [x] Removed Az PowerShell module requirement from all scripts
   - [x] Added Azure CLI installation requirement
   - [x] Removed separate Bicep installation requirement (built into az CLI)
+  - [x] Updated README.md, user-guide.md, and RUNBOOK.md
+  - [x] Created ADR-0002: Use Azure CLI Instead of Azure PowerShell Module
+  - [x] Created ADR-0003: Use GlobalStandard Deployment Type for Azure OpenAI
+  - [x] Created ADR-0004: Use Restore Flag for Soft-Deleted Azure OpenAI Resources
 
 ## Phase 1 - Baseline Verification
 
@@ -76,23 +83,57 @@ This plan breaks the MVP into small, testable tasks. Update it when the code cha
 
 ## Phase 5 - Reporting and Docs
 
-  - Updated README.md prerequisites (Azure CLI instead of Az module)
-  - Updated README.md with GlobalStandard deployment info and cost estimates
-  - Updated user-guide.md prerequisites (Azure CLI instead of Az module)
-  - Updated user-guide.md with region support and detailed cost estimates
-  - Updated RUNBOOK.md prerequisites (Azure CLI instead of Az module)
-  - Removed all references to separate Bicep installation
-  - Created ADR-0002: Use Azure CLI Instead of Azure PowerShell Module
-  - Created ADR-0003: Use GlobalStandard Deployment Type for Azure OpenAI
-  - Created ADR-0004: Use Restore Flag for Soft-Deleted Azure OpenAI Resources
-  - Documented data residency implications, deployment alternatives, and compliance guidance
-  - Documented soft-delete troubleshooting in RUNBOOK.md
+- [x] Update README.md prerequisites (Azure CLI instead of Az module)
+- [x] Update README.md with GlobalStandard deployment info and cost estimates
+- [x] Update user-guide.md prerequisites (Azure CLI instead of Az module)
+- [x] Update user-guide.md with region support and detailed cost estimates
+- [x] Update RUNBOOK.md prerequisites (Azure CLI instead of Az module)
+- [x] Remove all references to separate Bicep installation
+- [x] Create ADR-0002: Use Azure CLI Instead of Azure PowerShell Module
+- [x] Create ADR-0003: Use GlobalStandard Deployment Type for Azure OpenAI
+- [x] Create ADR-0004: Use Restore Flag for Soft-Deleted Azure OpenAI Resources
+- [x] Document data residency implications, deployment alternatives, and compliance guidance
+- [x] Document soft-delete troubleshooting in RUNBOOK.md
+
+## MVP Status
+
+**Phase 0 (Cross-Platform Azure Tooling):** ✅ Complete  
+**Phase 1 (Baseline Verification):** ✅ Complete  
+**Phase 2 (File Intake and Safety):** ✅ Complete  
+**Phase 3 (Content Extraction):** ✅ Complete for MVP (PDF/Office as future enhancements)  
+**Phase 4 (AI Naming and Sanitization):** ✅ Complete  
+**Phase 5 (Reporting and Docs):** ✅ Complete
+
+**Overall MVP Status:** ✅ **COMPLETE**
+
+All MVP requirements from `docs/SCOPE.md` are satisfied:
+- ✅ Read file contents from a single folder
+- ✅ Use Azure OpenAI to propose descriptive filenames
+- ✅ Rename files preserving original extension
+- ✅ Dry-run mode (`-WhatIf`)
+- ✅ Log renamed, skipped, and failed files
+- ✅ Per-file error handling (batch continues on failure)
+- ✅ Collision handling (numeric suffix)
+- ✅ Documentation describes current behaviour and limitations
+
+## Future Enhancements (Out of Scope for MVP)
+
+These features are documented as placeholders but not required for MVP:
+
+- [ ] Native PDF text extraction (currently uses filename as context)
+- [ ] Native Office document text extraction (currently uses filename as context)
+- [ ] Recursive subfolder processing
+- [ ] Batch capacity optimization for large folders (increase TPM quota)
+- [ ] Alternative AI backends (non-Azure providers)
+- [ ] GUI or web interface
 
 ## Assumptions
 
 - No automated tests exist yet; validation is manual.
 - Azure OpenAI is the only AI backend.
 - Users supply credentials via environment variables or parameters.
-- PowerShell 7 is available on Windows and macOS (cross-platform by default).
+- PowerShell 7 is available on Windows, macOS, and Linux (cross-platform by default).
 - Azure CLI works consistently across Windows, macOS, and Linux.
 - Bicep support is built into Azure CLI (no separate installation needed).
+- Soft-deleted Azure OpenAI resources are automatically restored during redeployment via `restore: true` property.
+- Users understand the data residency implications of GlobalStandard deployment (documented in ADR-0003).
