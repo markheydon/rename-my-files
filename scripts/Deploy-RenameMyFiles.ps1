@@ -167,7 +167,7 @@ if ($PSCmdlet.ShouldProcess($ResourceGroupName, 'Deploy Bicep template')) {
         Write-Host '  $env:AZURE_OPENAI_KEY = "<key from above>"'
         Write-Host ''
         Write-Host ' Run the rename script:' -ForegroundColor White
-        Write-Host '  .\Rename-MyFiles.ps1 -FolderPath "C:\YourFolder"'
+        Write-Host '  .\scripts\Rename-MyFiles.ps1 -FolderPath "C:\YourFolder"'
         Write-Host '────────────────────────────────────' -ForegroundColor Cyan
     }
     catch {
