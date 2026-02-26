@@ -1,0 +1,28 @@
+title: Rename My Files
+description: Automatically rename your files with AI — turn scan0042.pdf into something useful
+baseurl: ""
+url: "https://markheydon.github.io/rename-my-files"
+
+remote_theme: just-the-docs/just-the-docs
+
+# Navigation structure
+nav_order: 1
+
+# Search enabled by default
+search_enabled: true
+
+# Colour scheme (light/dark)
+color_scheme: auto
+
+# Aux links in header
+aux_links:
+  "GitHub": https://github.com/markheydon/rename-my-files
+  "Issues": https://github.com/markheydon/rename-my-files/issues
+
+# Footer (optional)
+footer_content: "Copyright &copy; 2026. All rights reserved."
+
+# Collections for organising decision records
+collections:
+  decisions:
+    output: true
