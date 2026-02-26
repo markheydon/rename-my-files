@@ -266,7 +266,7 @@ $files = Get-ChildItem -LiteralPath $resolvedFolder -File
 
 if ($files.Count -eq 0) {
     Write-Host 'No files found in the specified folder.' -ForegroundColor Yellow
-    exit 0
+    return
 }
 
 Write-Host "Found $($files.Count) file(s). Processing..." -ForegroundColor Cyan
