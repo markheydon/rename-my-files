@@ -21,8 +21,3 @@ aux_links:
 
 # Footer (optional)
 footer_content: "Copyright &copy; 2026. All rights reserved."
-
-# Collections for organising decision records
-collections:
-  decisions:
-    output: true
