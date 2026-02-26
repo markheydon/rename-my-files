@@ -321,9 +321,17 @@ foreach ($file in $files) {
 
     # Step 5: Rename (or preview in -WhatIf mode).
     if ($PSCmdlet.ShouldProcess($file.Name, "Rename to '$newName'")) {
-        Rename-Item -LiteralPath $file.FullName -NewName $newName
-        $countRenamed++
-        Write-Host "  RENAMED  $($file.Name)  →  $newName" -ForegroundColor Green
+        try {
+            Rename-Item -LiteralPath $file.FullName -NewName $newName -ErrorAction Stop
+            $countRenamed++
+            Write-Host "  RENAMED  $($file.Name)  →  $newName" -ForegroundColor Green
+        }
+        catch {
+            $reason = "Rename failed: $($_.Exception.Message)"
+            $skippedFiles.Add([PSCustomObject]@{ Name = $file.Name; Reason = $reason })
+            $countSkipped++
+            Write-Host "  SKIPPED  $($file.Name) — $reason" -ForegroundColor DarkYellow
+        }
     }
     else {
         # -WhatIf path — ShouldProcess already printed the WhatIf message.
