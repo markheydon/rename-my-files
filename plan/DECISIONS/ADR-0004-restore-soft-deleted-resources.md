@@ -35,7 +35,7 @@ This is a poor developer experience because:
 
 This allows the deployment to automatically restore soft-deleted resources rather than failing. The deployment script handles the common case (delete → redeploy) seamlessly without user intervention.
 
-**Additionally**, document the soft-delete behaviour and manual purge commands in `../RUNBOOK.md` for edge cases where purging is required (e.g., changing deployment location).
+**Additionally**, document the soft-delete behaviour and manual purge commands in `plan/RUNBOOK.md` for edge cases where purging is required (e.g., changing deployment location).
 
 ## Consequences
 
