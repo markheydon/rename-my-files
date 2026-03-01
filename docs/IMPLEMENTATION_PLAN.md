@@ -2,13 +2,11 @@
 
 This plan breaks work into small, testable tasks. Update it when the code changes.
 
-## Current State Snapshot (Post-MVP)
+## Current State Snapshot
 
-**MVP Status:** ✅ Complete — all core features are functional and documented.
+**MVP Status:** ✅ Complete — all core features are functional and documented. See below for details.
 
-**Active Development:** Phase 6 - Enhanced Content Extraction (PDF priority, Office secondary)
-
-### What Works Now:
+### What Works Now
 - Scripts live under `scripts/` and run locally with PowerShell 7.
 - `Rename-MyFiles.ps1` calls Azure OpenAI REST API directly — already cross-platform.
 - `Deploy-RenameMyFiles.ps1` uses Azure CLI (`az`) for resource deployment — cross-platform with built-in Bicep support.
@@ -16,12 +14,12 @@ This plan breaks work into small, testable tasks. Update it when the code change
 - Bicep template includes `restore: true` to handle soft-deleted resources automatically.
 - Dry-run uses `ShouldProcess` for `-WhatIf` behaviour.
 - Per-file errors are handled without stopping the batch.
-- Filename sanitization removes invalid characters and trims trailing dots.
+- Filename sanitisation removes invalid characters and trims trailing dots.
 - Collision handling appends a numeric suffix.
 - Text files are extracted with 8000 character limit.
 - A summary is printed with renamed and skipped counts.
 
-### Known Limitations (Next to Address):
+### Known Limitations
 - PDF extraction uses placeholder logic (returns filename as context).
 - Office document extraction uses placeholder logic (returns filename as context).
 
@@ -86,7 +84,7 @@ This plan breaks work into small, testable tasks. Update it when the code change
 
 **Note:** Real PDF and Office extraction moved to Phase 6 (Post-MVP).
 
-## Phase 4 - AI Naming and Sanitization
+## Phase 4 - AI Naming and Sanitisation
 
 - [x] Ensure prompt produces filename-safe output.
 - [x] Add truncation rules for long filenames (Windows filename length enforced in sanitization).
@@ -95,7 +93,7 @@ This plan breaks work into small, testable tasks. Update it when the code change
 - [x] Make Windows reserved device names (e.g. CON, PRN, NUL, COM1) safe by appending _file.
 - [x] Confirm collisions are resolved without overwriting (numeric suffix implemented).
 
-## Phase 5 - Reporting and Docs
+## Phase 5 - Reporting and Documentation
 
 - [x] Update README.md prerequisites (Azure CLI instead of Az module)
 - [x] Update README.md with GlobalStandard deployment info and cost estimates
@@ -109,30 +107,7 @@ This plan breaks work into small, testable tasks. Update it when the code change
 - [x] Document data residency implications, deployment alternatives, and compliance guidance
 - [x] Document soft-delete troubleshooting in RUNBOOK.md
 
-## MVP Status
-
-**Phase 0 (Cross-Platform Azure Tooling):** ✅ Complete  
-**Phase 1 (Baseline Verification):** ✅ Complete  
-**Phase 2 (File Intake and Safety):** ✅ Complete  
-**Phase 3 (Content Extraction):** ✅ Complete for MVP (PDF/Office as future enhancements)  
-**Phase 4 (AI Naming and Sanitization):** ✅ Complete  
-**Phase 5 (Reporting and Docs):** ✅ Complete
-
-**Overall MVP Status:** ✅ **COMPLETE**
-
-All MVP requirements from `docs/SCOPE.md` are satisfied:
-- ✅ Read file contents from a single folder
-- ✅ Use Azure OpenAI to propose descriptive filenames
-- ✅ Rename files preserving original extension
-- ✅ Dry-run mode (`-WhatIf`)
-- ✅ Log renamed, skipped, and failed files
-- ✅ Per-file error handling (batch continues on failure)
-- ✅ Collision handling (numeric suffix)
-- ✅ Documentation describes current behaviour and limitations
-
----
-
-## Phase 6 - Post-MVP: Enhanced Content Extraction
+## Phase 6 - Enhanced Content Extraction (In Progress)
 
 **Goal:** Replace placeholder extraction logic with real text extraction for PDF and Office documents to improve AI-generated filename quality.
 
