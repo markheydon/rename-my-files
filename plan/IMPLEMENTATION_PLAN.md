@@ -34,7 +34,8 @@ This plan breaks work into small, testable tasks. Update it when the code change
 - **Plain-text files:** Fully supported (text extraction works).
 - **PDF files:** Use filename context only (no text extraction yet). See Phase 6.
 - **Office documents (`.doc`, `.docx`, `.xls`, `.xlsx`, `.ppt`, `.pptx`):** Use filename context only (no text extraction yet). See Phase 6.
-- **Unsupported file types (binary, images, etc.):** Skipped automatically.
+- **Image formats (`.jpg`, `.jpeg`, `.png`, `.gif`, `.bmp`, `.tiff`, `.webp`):** Skipped automatically (no OCR/vision support in MVP).
+- **Other unsupported file types (binary, archives, executables, media):** Skipped automatically.
 - **Subfolder recursion:** Not supported; only top-level files processed.
 - **AI-generated names are suggestions:** May not always be perfect; always preview with `-WhatIf` first.
 
@@ -315,3 +316,31 @@ These features are documented as potential future work but are **not in scope** 
 - **Graceful degradation:** If extraction fails (malformed, encrypted, unsupported format), fall back to filename context rather than skip the file.
 - **8000-character limit:** Maintain existing truncation for remaining phases to control Azure OpenAI token usage and costs.
 - **No new mandatory dependencies:** If Phase 6 introduces dependencies, they should be optional or installable via standard package managers (NuGet, Homebrew, apt) without commercial licensing overhead.
+
+## Phase 7 - Image Support Feasibility (Out of Scope Validation)
+
+**Status:** ⏳ **Not Started**
+
+**Objective:** Validate whether image files should remain out of scope or move into a future scope update with explicit OCR/vision trade-offs.
+
+### Planned Tasks
+
+- [ ] Document current behaviour in code and docs as a baseline.
+  - [ ] Confirm `Get-FileTextContent` returns `$null` for image formats in [scripts/Rename-MyFiles.ps1](scripts/Rename-MyFiles.ps1).
+  - [ ] Ensure docs state image formats are skipped in MVP.
+- [ ] Evaluate two implementation paths (research only; no code changes):
+  - [ ] **OCR path:** Extract text from images first, then use existing filename prompt flow.
+  - [ ] **Vision path:** Send image content to a multimodal model for direct filename proposals.
+- [ ] Capture cost and operational implications for both paths.
+  - [ ] Estimate per-image token/processing cost impact vs plain text.
+  - [ ] Note latency impact and likely throughput reduction for large batches.
+  - [ ] Note privacy implications for sending image pixels vs extracted text.
+- [ ] Record decision in a future ADR and update [SCOPE.md](SCOPE.md) only if image support is approved.
+
+### Why This Phase Exists
+
+- [SCOPE.md](SCOPE.md) currently defines image understanding as out of scope for MVP.
+- This phase prevents accidental scope expansion while still keeping a testable decision trail.
+- Image support is not equivalent to current PDF placeholder behaviour; it requires OCR or multimodal processing.
+
+**Assumption:** Until scope changes are explicitly approved, image files remain intentionally unsupported and skipped.
