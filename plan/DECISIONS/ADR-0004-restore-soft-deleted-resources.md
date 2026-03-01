@@ -35,7 +35,7 @@ This is a poor developer experience because:
 
 This allows the deployment to automatically restore soft-deleted resources rather than failing. The deployment script handles the common case (delete → redeploy) seamlessly without user intervention.
 
-**Additionally**, document the soft-delete behaviour and manual purge commands in `docs/RUNBOOK.md` for edge cases where purging is required (e.g., changing deployment location).
+**Additionally**, document the soft-delete behaviour and manual purge commands in `../RUNBOOK.md` for edge cases where purging is required (e.g., changing deployment location).
 
 ## Consequences
 
@@ -137,7 +137,7 @@ resource openAIAccount 'Microsoft.CognitiveServices/accounts@2023-10-01-preview'
 
 ### Documentation Update
 
-Added a "Troubleshooting" section to `docs/RUNBOOK.md` documenting:
+Added a "Troubleshooting" section to `../RUNBOOK.md` documenting:
 - The soft-delete behaviour and automatic restore handling
 - Manual purge commands for edge cases (location changes, etc.)
 - Expected 48-hour retention period

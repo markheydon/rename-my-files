@@ -16,6 +16,15 @@ This tool processes file contents using Azure OpenAI with **GlobalStandard deplo
 
 **For strict data residency requirements** (EU/US only, single-region processing), see [ADR-0003](DECISIONS/ADR-0003-globalstandard-deployment-type.md) for alternative deployment options (DataZoneStandard or Regional Standard).
 
+## Repository Layout
+
+This repository is organised as follows:
+
+- `scripts/` — operational PowerShell scripts (`Rename-MyFiles.ps1`, deploy, and remove)
+- `infra/` — Azure infrastructure as code (`main.bicep`)
+- `docs/` — end-user documentation only
+- `plan/` — internal technical planning, runbook, and architecture decisions (ADRs)
+
 ## Setup
 
 1. Deploy Azure resources (one-time):

@@ -44,13 +44,7 @@ This tool uses Azure OpenAI with **GlobalStandard** deployment type, which means
 - Your organisation requires data processing in a single specific region
 - You handle sensitive data with geographic compliance requirements
 
-### Alternative: DataZone Deployment
-
-If you need **strict geographic processing**, you can deploy with `DataZoneStandard` instead:
-- **EU data zone:** All data processed only within EU member nations
-- **US data zone:** All data processed only within US regions
-
-This requires deploying to an EU or US region. For details, see [Azure OpenAI Deployment Types](https://learn.microsoft.com/en-us/azure/ai-foundry/foundry-models/concepts/deployment-types?view=foundry-classic#choose-the-right-deployment-type) and refer to the [GlobalStandard Deployment Type decision document](DECISIONS/ADR-0003-globalstandard-deployment-type.md).
+If you need strict geographic processing requirements, speak with your Azure administrator before using this tool.
 
 ---
 
@@ -165,6 +159,7 @@ Found 8 file(s). Processing...
 - **AI names are suggestions.** The AI does its best but may occasionally produce imperfect names. Review the dry-run output before renaming important files.
 - **Only the filename changes.** The tool never modifies the content of any file.
 - **Only files in the top-level folder are processed.** Sub-folders are not scanned.
+- **The summary reports renamed and skipped files.** Any file-level failure is recorded as skipped with a reason.
 
 ---
 

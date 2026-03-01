@@ -11,10 +11,12 @@ Create/update:
 - `.github/instructions/*.instructions.md`
 - `.github/agents/*` (minimal team)
 - `.github/prompts/*` (plan/next-task/implement/review/docs)
-- `docs/SCOPE.md`
-- `docs/IMPLEMENTATION_PLAN.md`
-- `docs/RUNBOOK.md`
-- `docs/DECISIONS/ADR-0001-architecture.md`
+- `.github/skills/*` (consistency skills for planning and decision-making)
+- `plan/SCOPE.md`
+- `plan/IMPLEMENTATION_PLAN.md`
+- `plan/RUNBOOK.md`
+- `plan/DECISIONS/ADR-0001-architecture.md`
+- `docs/` (user-facing documentation only: README, guides, etc.)
 
 Rules:
 - Keep it minimal (start with 4 agents unless strongly justified).

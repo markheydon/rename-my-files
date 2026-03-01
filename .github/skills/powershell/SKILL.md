@@ -1,3 +1,8 @@
+---
+name: powershell
+description: Implement PowerShell code for AI-based file renaming. Use when writing or updating scripts that read file contents, call Azure AI for filename suggestions, rename files while preserving extensions, and handle errors without stopping batch operations. Covers approved PowerShell verbs, parameter validation, error handling, logging, and Azure credential management.
+---
+
 # PowerShell File-Rename Implementation Skill
 
 ## Purpose

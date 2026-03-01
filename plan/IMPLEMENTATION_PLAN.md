@@ -27,7 +27,7 @@ This plan breaks work into small, testable tasks. Update it when the code change
   - Uses Azure CLI (`az`) for safe resource group deletion.
   - Prompts for confirmation; supports `–Force` flag.
 - All documentation (README, user guide, runbook) updated to reflect current behaviour and limitations.
-- Architecture decisions documented in `docs/DECISIONS/` (ADR-0002, ADR-0003, ADR-0004).
+- Architecture decisions documented in `DECISIONS/` (ADR-0002, ADR-0003, ADR-0004).
 
 ### Known Limitations (MVP)
 
@@ -174,12 +174,12 @@ This plan breaks work into small, testable tasks. Update it when the code change
 - [x] Note that only top-level files are processed (no recursion).
 
 #### Architecture Decision Records (ADRs)
-- [x] Create [docs/DECISIONS/ADR-0002-azure-cli-over-az-module.md](docs/DECISIONS/ADR-0002-azure-cli-over-az-module.md) — rationale for Azure CLI migration.
-- [x] Create [docs/DECISIONS/ADR-0003-globalstandard-deployment-type.md](docs/DECISIONS/ADR-0003-globalstandard-deployment-type.md) — data residency trade-offs and alternatives (DataZoneStandard, Regional Standard).
-- [x] Create [docs/DECISIONS/ADR-0004-restore-soft-deleted-resources.md](docs/DECISIONS/ADR-0004-restore-soft-deleted-resources.md) — soft-delete handling strategy and manual purge instructions.
+- [x] Create [DECISIONS/ADR-0002-azure-cli-over-az-module.md](DECISIONS/ADR-0002-azure-cli-over-az-module.md) — rationale for Azure CLI migration.
+  - [x] Create [DECISIONS/ADR-0003-globalstandard-deployment-type.md](DECISIONS/ADR-0003-globalstandard-deployment-type.md) — data residency trade-offs and alternatives (DataZoneStandard, Regional Standard).
+  - [x] Create [DECISIONS/ADR-0004-restore-soft-deleted-resources.md](DECISIONS/ADR-0004-restore-soft-deleted-resources.md) — soft-delete handling strategy and manual purge instructions.
 
 #### Troubleshooting & Operational Guidance
-- [x] Document soft-deleted resource troubleshooting in [docs/RUNBOOK.md](docs/RUNBOOK.md) (soft-delete retention, manual purge steps).
+- [x] Document soft-deleted resource troubleshooting in [RUNBOOK.md](RUNBOOK.md) (soft-delete retention, manual purge steps).
 - [x] Document data residency and processing location implications in user-guide.md.
 
 ## Phase 6 - Enhanced Content Extraction
@@ -192,7 +192,7 @@ This plan breaks work into small, testable tasks. Update it when the code change
 
 - Current placeholder extraction (filename context) allows all file types to receive best-effort renames.
 - Real text extraction requires new dependencies, cross-platform testing, and error handling.
-- MVP scope ([docs/SCOPE.md](docs/SCOPE.md)) does not mandate PDF/Office text support; plain-text only is MVP.
+- MVP scope ([SCOPE.md](SCOPE.md)) does not mandate PDF/Office text support; plain-text only is MVP.
 - Deferring to Phase 6 allows MVP release with stable, minimal dependencies.
 
 ### Phase 6a - PDF Text Extraction
@@ -211,7 +211,7 @@ This plan breaks work into small, testable tasks. Update it when the code change
   - Licensing (no proprietary/expensive licenses).
   - Error handling (malformed/encrypted PDFs fall back gracefully).
   - Size (minimal impact on script distribution).
-- [ ] Document recommendation and rationale in [docs/DECISIONS/ADR-000X-pdf-extraction.md](docs/DECISIONS/) (future ADR).
+- [ ] Document recommendation and rationale in [DECISIONS/ADR-000X-pdf-extraction.md](DECISIONS/) (future ADR).
 
 #### Task: Implement PDF Text Extraction
 - [ ] Modify `Get-FileTextContent` function in [scripts/Rename-MyFiles.ps1](scripts/Rename-MyFiles.ps1) (lines 93–101).
@@ -246,7 +246,7 @@ This plan breaks work into small, testable tasks. Update it when the code change
   - Installation ease (NuGet preferred over external utilities).
   - Licensing (open source or permissive).
   - Error handling (corrupted/password-protected documents handled gracefully).
-- [ ] Document recommendation and rationale in [docs/DECISIONS/ADR-000X-office-extraction.md](docs/DECISIONS/) (future ADR).
+- [ ] Document recommendation and rationale in [DECISIONS/ADR-000X-office-extraction.md](DECISIONS/) (future ADR).
 
 #### Task: Implement Office Document Text Extraction
 - [ ] Modify `Get-FileTextContent` function in [scripts/Rename-MyFiles.ps1](scripts/Rename-MyFiles.ps1) (lines 104–107).
@@ -281,12 +281,12 @@ This plan breaks work into small, testable tasks. Update it when the code change
 - [ ] Run linting and validation:
   - PSScriptAnalyzer: `Invoke-ScriptAnalyzer -Path .\scripts -Settings .\PSScriptAnalyzerSettings.psd1 -Recurse`
   - Bicep build (if dependencies require Bicep changes): `az bicep build --file infra/main.bicep`
-- [ ] Update [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) to mark Phase 6 complete.
+- [ ] Update [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) to mark Phase 6 complete.
 - [ ] Update [README.md](README.md) **Current Limitations** section to reflect new extraction capabilities.
 
 ## Future Enhancements (Out of Scope — Not Planned)
 
-These features are documented as potential future work but are **not in scope** per [docs/SCOPE.md](docs/SCOPE.md):
+These features are documented as potential future work but are **not in scope** per [SCOPE.md](SCOPE.md):
 
 - **Recursive subfolder processing** — Current design processes only top-level files to keep behaviour straightforward. Could be added as a flag (e.g., `-Recurse`) in a future version.
 - **Batch capacity optimisation** — Scale to 10,000+ files by increasing Azure OpenAI TPM (tokens per minute) quota. Requires quota adjustments and batching logic.

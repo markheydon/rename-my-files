@@ -1,3 +1,8 @@
+---
+name: azure-bicep
+description: Implement Azure Bicep infrastructure for the AI-based file renaming workflow. Use when deploying or updating Bicep templates for Azure resources required by the rename script's AI integration. Covers secure parameterization, avoiding hardcoded secrets, resource configuration for file renaming operations, and validation.
+---
+
 # Azure AI Infrastructure (Bicep) Skill
 
 ## Purpose

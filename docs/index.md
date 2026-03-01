@@ -5,9 +5,9 @@ layout: home
 
 # Rename My Files
 
-**Rename My Files** is a free, open-source tool that automatically renames your files with clear, descriptive names — using AI to read the content and figure out what the file is actually about.
+**Rename My Files** automatically renames files with clearer, descriptive names by using AI to analyse available text content.
 
-No more `scan0042.pdf` or `Document (3).docx`. Instead, you get:
+Instead of names like `scan0042.pdf` or `Document (3).docx`, you get names such as:
 
 - `Acme Ltd Invoice - February 2025.pdf`
 - `HMRC Self Assessment Tax Return 2024-25.pdf`
@@ -19,7 +19,7 @@ No more `scan0042.pdf` or `Document (3).docx`. Instead, you get:
 
 1. You point the tool at a folder of files.
 2. The tool reads available text content from each file.
-3. It sends that context to Azure AI (privately, via your own Azure account).
+3. It sends that context to Azure AI in your Azure subscription.
 4. Azure AI suggests a descriptive, human-readable name.
 5. The tool renames the file, keeping the same extension.
 
@@ -39,6 +39,7 @@ Your files stay in the same folder — only their names change.
 - PDF and Office documents have limited support (the tool currently uses filename context only).
 - Unsupported or unreadable files are skipped.
 - AI-generated names are suggestions — they may not always be perfect.
+- Only files in the selected folder are processed (subfolders are not scanned).
 
 ---
 
