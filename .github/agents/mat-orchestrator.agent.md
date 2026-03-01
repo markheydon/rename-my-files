@@ -17,6 +17,7 @@ description: Planner and task gatekeeper for Rename My Files.
 
 ## Inputs
 
-- `docs/SCOPE.md`
-- `docs/IMPLEMENTATION_PLAN.md`
-- `docs/RUNBOOK.md`
+- `plan/SCOPE.md`
+- `plan/IMPLEMENTATION_PLAN.md`
+- `plan/RUNBOOK.md`
+- `.github/skills/plan-management/` (for consistency in plan documents)

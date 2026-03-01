@@ -33,10 +33,11 @@ Create or update these, using the repository as the source of truth:
 ### Always-on repo context
 - `.github/copilot-instructions.md` (project-wide "rulebook": boundaries + commands).
 - `.github/instructions/*.instructions.md` (scoped rules; at least one for the primary language/stack).
-- `docs/SCOPE.md` (authoritative scope + "must not have" list).
-- `docs/IMPLEMENTATION_PLAN.md` (incremental phases with small, testable tasks).
-- `docs/RUNBOOK.md` (how to build/test/run; honest about what's not decided yet).
-- `docs/DECISIONS/ADR-0001-*.md` (architecture "shape" decision).
+- `plan/SCOPE.md` (authoritative scope + "must not have" list).
+- `plan/IMPLEMENTATION_PLAN.md` (incremental phases with small, testable tasks).
+- `plan/RUNBOOK.md` (how to build/test/run; honest about what's not decided yet).
+- `plan/DECISIONS/ADR-0001-*.md` (architecture "shape" decision).
+- `docs/` containing only user-facing documentation (README, guides, etc.).
 
 ### Minimal agent team (default 4–5)
 Create these custom agents under `.github/agents/`:
@@ -50,11 +51,11 @@ Keep the agent count minimal. Only add a UI agent if UI complexity is high or us
 
 ### Prompt files (default 5)
 Create these prompt files under `.github/prompts/` (slash commands):
-- `mat-plan.prompt.md`           (refresh `IMPLEMENTATION_PLAN.md`)
+- `mat-plan.prompt.md`           (refresh `plan/IMPLEMENTATION_PLAN.md` using `plan-management` skill)
 - `mat-next-task.prompt.md`      (choose smallest next task + acceptance criteria)
 - `mat-implement-task.prompt.md` (implement ONE task; code + tests + plan update)
 - `mat-review.prompt.md`         (quality/security checks; build/test evidence)
-- `mat-docs.prompt.md`           (update README/RUNBOOK/ADR to match reality)
+- `mat-docs.prompt.md`           (update README/RUNBOOK/ADR using `adr-writing` and `plan-management` skills)
 
 Each prompt file must include:
 - `description`.
