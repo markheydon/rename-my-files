@@ -50,7 +50,7 @@ If you need **strict geographic processing**, you can deploy with `DataZoneStand
 - **EU data zone:** All data processed only within EU member nations
 - **US data zone:** All data processed only within US regions
 
-This requires deploying to an EU or US region. For details, see [Azure OpenAI Deployment Types](https://learn.microsoft.com/en-us/azure/ai-foundry/foundry-models/concepts/deployment-types?view=foundry-classic#choose-the-right-deployment-type) and refer to the [GlobalStandard Deployment Type decision document](../DECISIONS/ADR-0003-globalstandard-deployment-type.md).
+This requires deploying to an EU or US region. For details, see [Azure OpenAI Deployment Types](https://learn.microsoft.com/en-us/azure/ai-foundry/foundry-models/concepts/deployment-types?view=foundry-classic#choose-the-right-deployment-type) and refer to the [GlobalStandard Deployment Type decision document](DECISIONS/ADR-0003-globalstandard-deployment-type.md).
 
 ---
 
@@ -152,9 +152,9 @@ Found 8 file(s). Processing...
 | Situation | What happens |
 |-----------|-------------|
 | Image files (`.jpg`, `.png`, etc.) | Skipped — the tool only reads text content |
-| PDF or Office documents | Limited — the tool currently uses the filename as context, so names may be generic |
-| Encrypted PDF or password-protected documents | Skipped — the file cannot be read |
-| Corrupted files | Skipped — the file cannot be read |
+| PDF or Office documents | Limited — the tool currently uses filename context only, so names may be generic |
+| Encrypted or password-protected PDF/Office files | Processed using filename context only (text extraction is not implemented) |
+| Corrupted or unreadable plain-text files | Skipped — the file cannot be read |
 | Very short or empty files | The AI may produce a generic or imperfect name |
 | File with the same proposed name already exists | A numeric suffix is added (e.g. `-1`, `-2`) |
 | Proposed filename exceeds Windows limit (255 chars) | Name is truncated to fit the limit |

@@ -9,10 +9,9 @@
 **Rename My Files** is a PowerShell-based command-line utility that:
 
 1. Accepts a folder path as input.
-2. Reads the content of each file in that folder.
-3. Sends that content to an Azure AI model.
-4. Receives a meaningful, human-readable filename suggestion.
-5. Renames each file on disk, preserving the original extension.
+2. Reads available text content from each file in that folder.
+3. Uses Azure AI to propose a meaningful, human-readable filename.
+4. Renames each file on disk, preserving the original extension.
 
 Example: a PDF letter from "Acme Ltd" about a contract renewal dated 13 January 2026 might be renamed to:
 
@@ -28,7 +27,7 @@ Acme Ltd Contract Renewal Notice - 13th January 2026.pdf
 [Your machine]                         [Azure]
   Rename-MyFiles.ps1
        │
-       ├─ Reads file content
+       ├─ Reads text content (or filename context)
        │
        └─ Calls Azure OpenAI ──────► Azure OpenAI resource
               (GPT-4o mini)                  │
@@ -129,7 +128,9 @@ To preview changes without renaming (dry-run mode):
 ## Current Limitations
 
 - Plain text files are fully supported.
-- PDF and Office files currently use the filename as context (no real text extraction yet).
+- PDF and Office files currently use filename context only (no text extraction yet).
+- Unsupported file types are skipped.
+- Only files in the top-level folder are processed (no recursive scan).
 - Proposed filenames longer than 255 characters are truncated to fit Windows limits.
 - Control characters (including tabs and newlines) are removed from proposed filenames.
 - Multiple consecutive spaces are collapsed to a single space.
@@ -159,7 +160,7 @@ Before making changes to [infra/main.bicep](infra/main.bicep), validate the temp
 az bicep build --file infra/main.bicep
 ```
 
-This checks for syntax errors and linting warnings. All PRs to `main` automatically run Bicep validation via GitHub Actions.
+This checks for Bicep syntax and compilation errors. All PRs to `main` automatically run Bicep validation via GitHub Actions.
 
 ### Linting PowerShell Scripts
 

@@ -18,8 +18,8 @@ No more `scan0042.pdf` or `Document (3).docx`. Instead, you get:
 ## How It Works
 
 1. You point the tool at a folder of files.
-2. The tool reads each file's content.
-3. It sends that content to Azure AI (privately, via your own Azure account).
+2. The tool reads available text content from each file.
+3. It sends that context to Azure AI (privately, via your own Azure account).
 4. Azure AI suggests a descriptive, human-readable name.
 5. The tool renames the file, keeping the same extension.
 
@@ -36,8 +36,8 @@ Your files stay in the same folder — only their names change.
 ## Limitations
 
 - Only plain text files (`.txt`, `.md`, `.csv`, etc.) are fully supported out of the box.
-- PDF and Office documents have limited support (the tool currently uses the filename as context).
-- Encrypted or corrupted files are skipped automatically.
+- PDF and Office documents have limited support (the tool currently uses filename context only).
+- Unsupported or unreadable files are skipped.
 - AI-generated names are suggestions — they may not always be perfect.
 
 ---
