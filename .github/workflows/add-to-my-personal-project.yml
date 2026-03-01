@@ -15,4 +15,4 @@ jobs:
   add-to-personal-project:
     uses: markheydon/github-workflows/.github/workflows/add-to-personal-project.yml@main
     secrets:
-      GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+      PERSONAL_ACCESS_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
