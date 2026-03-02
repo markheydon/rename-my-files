@@ -46,6 +46,46 @@ This repository is organised as follows:
 .\scripts\Rename-MyFiles.ps1 -FolderPath "C:\Documents\MyUnfiledFolder" -WhatIf
 ```
 
+Example dry-run output with smart skip (files with good names are skipped to save cost):
+
+```
+Scanning folder: C:\Documents\MyUnfiledFolder
+Found 6 file(s). Processing...
+
+   SKIPPED  Invoice - 2025-02-15.pdf -- already descriptive
+   PROPOSED scan0042.pdf  ->  Acme Ltd Contract Renewal - 13th January 2026.pdf
+   SKIPPED  Tax Return 2024.xlsx -- already descriptive
+   PROPOSED Document (3).docx  ->  Smith Family Medical Records.docx
+   SKIPPED  photo.jpg -- unsupported or unreadable
+   PROPOSED letter.txt  ->  Dr Brown Appointment Confirmation - 20 February 2026.txt
+
+-------------------------------------
+ Summary
+-------------------------------------
+ Files scanned    : 6
+ Files renamed    : 3
+ Files skipped    : 3
+
+ Skip breakdown:
+   - Already descriptive : 2
+
+ Skipped files:
+   * Invoice - 2025-02-15.pdf -- Already descriptive
+   * Tax Return 2024.xlsx -- Already descriptive
+   * photo.jpg -- Unsupported or unreadable file type
+-------------------------------------
+```
+
+## Run (Force Rename Everything)
+
+To rename all files regardless of their current name quality:
+
+```powershell
+.\scripts\Rename-MyFiles.ps1 -FolderPath "C:\Documents\MyUnfiledFolder" -Force -WhatIf
+```
+
+With `-Force`, the smart skip is disabled and all readable files are processed by Azure AI.
+
 ## Run (Rename)
 
 ```powershell
@@ -64,7 +104,11 @@ This repository is organised as follows:
 
 **Problem:** Deployment fails with error `FlagMustBeSetForRestore` — a previously deleted Azure OpenAI resource is soft-deleted and blocking redeployment.
 
-**Default Behaviour:** The Bicep template includes `restore: true`, which automatically restores soft-deleted resources during redeployment. This handles most redeploy scenarios seamlessly.
+**Default Behaviour:** Deployment now runs in two steps automatically:
+1. Tries normal deployment with `restoreOpenAI=false` (works for active resources and normal redeploys).
+2. If Azure returns `FlagMustBeSetForRestore`, retries with `restoreOpenAI=true` to restore the soft-deleted resource.
+
+This avoids `CanNotRestoreAnActiveResource` on active resources while still handling soft-deleted resources without manual intervention.
 
 **Manual Purge (Edge Cases):** If you need to completely purge the soft-deleted resource (e.g., changing location or starting fresh), run:
 

@@ -25,6 +25,18 @@
 .PARAMETER DeploymentName
     The name of the Azure OpenAI model deployment to use. Defaults to 'gpt-4o-mini'.
 
+.PARAMETER RequestThrottleSeconds
+    Delay in seconds between Azure OpenAI API calls to avoid rate limits (default: 5 seconds).
+    Default is tuned for typical usage with moderate quota. Most users should not need to change this.
+
+.PARAMETER MaxPromptCharacters
+    Maximum characters sent to Azure OpenAI from each file (default: 900).
+    Lower values reduce token usage and cost per file. Default is set for low-cost operation.
+
+.PARAMETER Force
+    Force rename even if the current filename already appears descriptive.
+    By default, Azure AI may keep the existing filename unchanged when it is already clear and useful.
+
 .PARAMETER WhatIf
     Shows what files would be renamed without actually renaming them.
 
@@ -42,6 +54,8 @@
     .\Rename-MyFiles.ps1 -FolderPath "C:\Documents\Unfiled" -Verbose
 
     Renames files with detailed progress output.
+
+
 
 .NOTES
     Requires PowerShell 7.2 or later.
@@ -63,15 +77,146 @@ param (
 
     [Parameter(HelpMessage = 'Azure OpenAI model deployment name.')]
     [ValidateNotNullOrEmpty()]
-    [string]$DeploymentName = 'gpt-4o-mini'
+    [string]$DeploymentName = 'gpt-4o-mini',
+
+    [Parameter(HelpMessage = 'Delay in seconds between Azure OpenAI API calls to avoid TPM/RPM rate limits.')]
+    [ValidateRange(0, 60)]
+    [int]$RequestThrottleSeconds = 5,
+
+    [Parameter(HelpMessage = 'Maximum number of characters sent to Azure OpenAI from each file (lower values reduce token usage).')]
+    [ValidateRange(400, 8000)]
+    [int]$MaxPromptCharacters = 900,
+
+    [Parameter(HelpMessage = 'Force rename even if current filename appears already descriptive.')]
+    [switch]$Force
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 # ---------------------------------------------------------------------------
-# Helper: Read file content as plain text, with basic support for PDF.
-# Returns $null if the file type is unsupported or unreadable.
+# Module loading: Attempt to load PdfPig for PDF text extraction.
+# ---------------------------------------------------------------------------
+$pdfPigLoaded = $false
+$pdfPigAssemblyPath = $null
+
+# Resolve user profile directory in a cross-platform way for NuGet lookup.
+$userProfile = [Environment]::GetFolderPath('UserProfile')
+if (-not $userProfile) { $userProfile = $HOME }
+
+# Try to find PdfPig in common NuGet and local locations.
+$nugetPaths = @()
+if ($userProfile) {
+    $nugetPaths += Join-Path $userProfile '.nuget' 'packages' 'uglytoad.pdfpig' '*' 'lib' 'net*' 'UglyToad.PdfPig.dll'
+}
+$nugetPaths += @(
+    (Join-Path $PSScriptRoot '..' 'lib' 'UglyToad.PdfPig.dll'),
+    (Join-Path $PSScriptRoot 'lib' 'UglyToad.PdfPig.dll')
+)
+
+foreach ($searchPath in $nugetPaths) {
+    $resolvedPath = Resolve-Path -Path $searchPath -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($resolvedPath) {
+        $pdfPigAssemblyPath = $resolvedPath.Path
+        try {
+            Add-Type -LiteralPath $pdfPigAssemblyPath -ErrorAction Stop
+            $pdfPigLoaded = $true
+            Write-Verbose "Successfully loaded PdfPig from: $pdfPigAssemblyPath"
+            break
+        }
+        catch {
+            Write-Verbose "Failed to load PdfPig from $pdfPigAssemblyPath : $_"
+            $pdfPigLoaded = $false
+        }
+    }
+}
+
+if (-not $pdfPigLoaded) {
+    Write-Warning @"
+WARNING: PdfPig library not found. PDF files will be SKIPPED.
+
+To enable PDF support, run the installation script:
+    .\scripts\Install-Dependencies.ps1
+
+Then run this script again. For details, see: docs/user-guide.md > Enabling PDF text extraction
+"@
+}
+
+# ---------------------------------------------------------------------------
+# Helper: Extract text from a PDF file using PdfPig.
+# Returns extracted text up to 8000 characters, or $null on failure.
+# ---------------------------------------------------------------------------
+function Get-PdfTextContent {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory)]
+        [string]$FilePath
+    )
+
+    if (-not $pdfPigLoaded) {
+        Write-Verbose "PdfPig not loaded. Cannot extract PDF text from $FilePath"
+        return $null
+    }
+
+    $document = $null
+    try {
+        try {
+            $document = [UglyToad.PdfPig.PdfDocument]::Open($FilePath)
+
+            if ($null -eq $document) {
+                Write-Verbose "PdfPig returned null document for $FilePath"
+                return $null
+            }
+
+            $textBuilder = [System.Text.StringBuilder]::new()
+            foreach ($page in $document.GetPages()) {
+                if ($null -ne $page.Text) {
+                    $textBuilder.Append($page.Text) | Out-Null
+                    if ($textBuilder.Length -ge 8000) {
+                        break
+                    }
+                }
+            }
+
+            $extractedText = $textBuilder.ToString()
+            if ([string]::IsNullOrWhiteSpace($extractedText)) {
+                Write-Verbose "No text extracted from PDF: $FilePath"
+                return $null
+            }
+
+            # Truncate to 8000 characters to match existing limit.
+            if ($extractedText.Length -gt 8000) {
+                $extractedText = $extractedText.Substring(0, 8000)
+            }
+
+            Write-Verbose "Extracted $($extractedText.Length) characters from PDF: $FilePath"
+            return $extractedText
+        }
+        finally {
+            if ($null -ne $document) {
+                $document.Dispose()
+            }
+        }
+    }
+    catch {
+        # Distinguish between dependency/installation errors vs. PDF content errors.
+        if ($_.Exception.Message -match "Could not load file or assembly") {
+            Write-Warning "Missing PdfPig dependency for $FilePath : Run '.\scripts\Install-Dependencies.ps1' to install all required libraries. Error: $_"
+            return $null
+        }
+        else {
+            # PDF content error (scanned, encrypted, corrupted, etc).
+            Write-Verbose "PDF extraction error for $FilePath : $_"
+            return $null
+        }
+    }
+}
+
+# ---------------------------------------------------------------------------
+# Helper: Read file content as plain text, with PDF support.
+# Returns the file content as text when successful.
+# May return $null if the file type is unsupported or the file cannot be read
+# (including PDF extraction failures or missing PdfPig).
 # ---------------------------------------------------------------------------
 function Get-FileTextContent {
     [CmdletBinding()]
@@ -90,13 +235,22 @@ function Get-FileTextContent {
             }
 
             '.pdf' {
-                # TODO: For production use, consider adding iTextSharp or PdfPig via NuGet,
-                # or using a pre-installed pdftotext utility. This stub returns a placeholder.
-                # Example with pdftotext (if installed):
-                #   $text = & pdftotext $File.FullName -
-                #   return $text
-                Write-Verbose "PDF extraction is not fully implemented. Using filename as context for: $($File.Name)"
-                return "[PDF file: $($File.Name)]"
+                # Require PdfPig for PDF extraction -- do not degrade to filename context.
+                if (-not $pdfPigLoaded) {
+                    Write-Verbose "PdfPig not loaded. Skipping PDF file: $($File.Name)"
+                    return $null
+                }
+                
+                $extractedText = Get-PdfTextContent -FilePath $File.FullName
+                if ($null -ne $extractedText) {
+                    # Extraction succeeded.
+                    return $extractedText
+                }
+                else {
+                    # Extraction failed (corrupted, scanned, encrypted, etc).
+                    Write-Verbose "Could not extract text from PDF: $($File.Name) (may be scanned, encrypted, or corrupted)"
+                    return $null
+                }
             }
 
             { $_ -in '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx' } {
@@ -121,6 +275,7 @@ function Get-FileTextContent {
 
 # ---------------------------------------------------------------------------
 # Helper: Call Azure OpenAI to propose a filename for the given content.
+# Includes exponential backoff retry for rate limit errors.
 # Returns a proposed filename string (without extension), or $null on failure.
 # ---------------------------------------------------------------------------
 function Invoke-AzureOpenAIFilenameProposal {
@@ -139,10 +294,27 @@ function Invoke-AzureOpenAIFilenameProposal {
         [string]$ApiKey,
 
         [Parameter(Mandatory)]
-        [string]$DeploymentName
+        [string]$DeploymentName,
+
+        [Parameter()]
+        [switch]$AlwaysSuggestNewName,
+
+        [Parameter()]
+        [ValidateRange(400, 8000)]
+        [int]$MaxPromptCharacters = 1200,
+
+        [Parameter()]
+        [int]$MaxRetries = 3
     )
 
-    $systemPrompt = @'
+    $filenamePolicy = if ($AlwaysSuggestNewName) {
+        '- Even if the current filename is already good, suggest a better descriptive filename.'
+    }
+    else {
+        '- If the current filename is already clear, specific, and useful, return it unchanged (without extension).'
+    }
+
+    $systemPrompt = @"
 You are a file-naming assistant. Your only job is to propose a clear, descriptive, human-readable
 filename for a document based on its content.
 
@@ -154,6 +326,7 @@ Rules:
 - Keep the name concise but descriptive (aim for under 80 characters).
 - Avoid special characters that are invalid on Windows filesystems: \ / : * ? " < > |
 - If you cannot reliably determine specific details, still propose the best descriptive name you can.
+$filenamePolicy
 - Respond with ONLY the proposed filename -- no explanation, no punctuation at the end.
 
 Examples of good output:
@@ -161,13 +334,14 @@ Examples of good output:
   HMRC Self Assessment Tax Return 2024-25
   Dr Smith Referral Letter - Patient John Doe
   Electricity Bill - March 2025
-'@
+"@
 
     $userPrompt = "Original filename: $OriginalFileName`n`nDocument content:`n$FileContent"
 
-    # Truncate content to avoid exceeding token limits (approx 6000 chars ~ 1500 tokens).
-    if ($userPrompt.Length -gt 8000) {
-        $userPrompt = $userPrompt.Substring(0, 8000) + "`n[... content truncated ...]"
+    # Truncate content to avoid exceeding token limits.
+    # Low-cost default: 900 chars to keep per-file token usage and rate-limit risk lower.
+    if ($userPrompt.Length -gt $MaxPromptCharacters) {
+        $userPrompt = $userPrompt.Substring(0, $MaxPromptCharacters) + "`n[... content truncated ...]"
     }
 
     $requestBody = @{
@@ -181,17 +355,89 @@ Examples of good output:
 
     $uri = "$($Endpoint.TrimEnd('/'))/openai/deployments/$DeploymentName/chat/completions?api-version=2024-02-01"
 
-    try {
-        $response = Invoke-RestMethod -Uri $uri -Method Post -ContentType 'application/json' -Body $requestBody -Headers @{
-            'api-key' = $ApiKey
+    $retryCount = 0
+
+    while ($retryCount -le $MaxRetries) {
+        try {
+            $response = Invoke-RestMethod -Uri $uri -Method Post -ContentType 'application/json' -Body $requestBody -Headers @{
+                'api-key' = $ApiKey
+            }
+            $proposed = $response.choices[0].message.content.Trim()
+            return $proposed
         }
-        $proposed = $response.choices[0].message.content.Trim()
-        return $proposed
+        catch {
+            $errorMessage = $_.Exception.Message
+            $statusCode = $_.Exception.Response.StatusCode.value__ 2>$null
+
+            # Check for rate limit (429 Too Many Requests or RateLimitReached error code).
+            $isRateLimit = ($statusCode -eq 429) -or ($errorMessage -match 'RateLimitReached|rate.limit|quota')
+            
+            if ($isRateLimit) {
+                if ($retryCount -lt $MaxRetries) {
+                    # Extract Retry-After header (Microsoft recommended approach).
+                    $retryAfterSeconds = $null
+                    try {
+                        $httpResponse = $_.Exception.Response
+                        if ($null -ne $httpResponse -and $null -ne $httpResponse.Headers) {
+                            # Try Retry-After header (seconds).
+                            $retryAfterValues = $httpResponse.Headers.GetValues('Retry-After')
+                            if ($null -ne $retryAfterValues -and $retryAfterValues.Count -gt 0) {
+                                $retryAfterSeconds = [int]$retryAfterValues[0]
+                            }
+                            
+                            # Try retry-after-ms header (milliseconds).
+                            if ($null -eq $retryAfterSeconds) {
+                                $retryAfterMsValues = $httpResponse.Headers.GetValues('retry-after-ms')
+                                if ($null -ne $retryAfterMsValues -and $retryAfterMsValues.Count -gt 0) {
+                                    $retryAfterSeconds = [Math]::Ceiling([int]$retryAfterMsValues[0] / 1000)
+                                }
+                            }
+                        }
+                    }
+                    catch {
+                        # Header parsing failed; fall back to exponential backoff.
+                        Write-Verbose "Could not parse Retry-After header: $_"
+                    }
+
+                    # Use server-provided wait time if available, otherwise exponential backoff.
+                    if ($null -eq $retryAfterSeconds -or $retryAfterSeconds -le 0) {
+                        # For rate limits, use longer base delay (10s) since TPM quotas replenish slowly.
+                        # Standard exponential backoff: 10s, 20s, 40s (capped at 60s).
+                        $retryAfterSeconds = 10 * [Math]::Pow(2, $retryCount)
+                        $retryAfterSeconds = [Math]::Min($retryAfterSeconds, 60)  # Cap at 60s
+                        Write-Verbose "No Retry-After header found; using exponential backoff: ${retryAfterSeconds}s"
+                    }
+                    else {
+                        Write-Verbose "Using server-provided Retry-After: ${retryAfterSeconds}s"
+                    }
+
+                    # Add jitter (+/-25% random variation to avoid thundering herd).
+                    $jitter = (Get-Random -Minimum -0.25 -Maximum 0.25) * $retryAfterSeconds
+                    $actualDelay = [Math]::Max(1, [Math]::Ceiling($retryAfterSeconds + $jitter))
+
+                    Write-Verbose "Rate limit hit for '$OriginalFileName'. Waiting ${actualDelay}s before retry $($retryCount + 1) of $MaxRetries..."
+                    Start-Sleep -Seconds $actualDelay
+                    $retryCount++
+                    continue
+                }
+                else {
+                    Write-Warning "Rate limit exceeded for '$OriginalFileName' after $MaxRetries retries."
+                    Write-Warning "The script is already using low-cost defaults."
+                    Write-Warning "If this persists, your Azure OpenAI quota is likely too low for current batch size."
+                    return $null
+                }
+            }
+
+            # Other errors (not rate limit).
+            Write-Verbose "Azure OpenAI call failed for '$OriginalFileName' (attempt $($retryCount + 1)): $errorMessage"
+            
+            # Don't retry non-rate-limit errors.
+            return $null
+        }
     }
-    catch {
-        Write-Verbose "Azure OpenAI call failed for '$OriginalFileName': $_"
-        return $null
-    }
+
+    Write-Warning "Failed to get filename proposal for '$OriginalFileName' after $MaxRetries retries."
+    return $null
 }
 
 # ---------------------------------------------------------------------------
@@ -301,6 +547,7 @@ Write-Output "Found $($files.Count) file(s). Processing..."
 
 $countRenamed  = 0
 $countSkipped  = 0
+$countUnchanged = 0
 $skippedFiles  = [System.Collections.Generic.List[PSCustomObject]]::new()
 
 foreach ($file in $files) {
@@ -321,13 +568,21 @@ foreach ($file in $files) {
         -OriginalFileName $file.Name `
         -Endpoint $AzureOpenAIEndpoint `
         -ApiKey $AzureOpenAIKey `
-        -DeploymentName $DeploymentName
+        -DeploymentName $DeploymentName `
+        -AlwaysSuggestNewName:$Force `
+        -MaxPromptCharacters $MaxPromptCharacters
 
     if ($null -eq $proposed) {
         $skippedFiles.Add([PSCustomObject]@{ Name = $file.Name; Reason = 'Azure AI call failed' })
         $countSkipped++
         Write-Output "  SKIPPED  $($file.Name) -- Azure AI call failed"
         continue
+    }
+
+    # Pace requests to avoid bursting into TPM/RPM limits (Microsoft recommended approach).
+    if ($RequestThrottleSeconds -gt 0) {
+        Write-Verbose "Throttling: waiting ${RequestThrottleSeconds}s before next API call..."
+        Start-Sleep -Seconds $RequestThrottleSeconds
     }
 
     # Step 3: Sanitise the proposed name.
@@ -339,7 +594,16 @@ foreach ($file in $files) {
         continue
     }
 
-    # Step 4: Resolve a unique destination path.
+    # Step 4: Check if proposed filename is identical to current filename.
+    if ([string]::Equals($sanitised, [System.IO.Path]::GetFileNameWithoutExtension($file.Name), [System.StringComparison]::OrdinalIgnoreCase)) {
+        Write-Output "  SKIPPED  $($file.Name) -- filename unchanged"
+        $skippedFiles.Add([PSCustomObject]@{ Name = $file.Name; Reason = 'Filename unchanged' })
+        $countSkipped++
+        $countUnchanged++
+        continue
+    }
+
+    # Step 5: Resolve a unique destination path.
     $destinationPath = Resolve-UniqueFilePath `
         -Directory $file.DirectoryName `
         -BaseName $sanitised `
@@ -347,7 +611,7 @@ foreach ($file in $files) {
 
     $newName = Split-Path $destinationPath -Leaf
 
-    # Step 5: Rename (or preview in -WhatIf mode).
+    # Step 6: Rename (or preview in -WhatIf mode).
     if ($PSCmdlet.ShouldProcess($file.Name, "Rename to '$newName'")) {
         try {
             Rename-Item -LiteralPath $file.FullName -NewName $newName -ErrorAction Stop
@@ -374,9 +638,15 @@ Write-Output ''
 Write-Output '-------------------------------------'
 Write-Output ' Summary'
 Write-Output '-------------------------------------'
-Write-Output " Files scanned : $($files.Count)"
-Write-Output " Files renamed : $countRenamed"
-Write-Output " Files skipped : $countSkipped"
+Write-Output " Files scanned    : $($files.Count)"
+Write-Output " Files renamed    : $countRenamed"
+Write-Output " Files skipped    : $countSkipped"
+
+if ($countUnchanged -gt 0) {
+    Write-Output ''
+    Write-Output ' Skip breakdown:'
+    Write-Output "   - Filename unchanged   : $countUnchanged"
+}
 
 if ($skippedFiles.Count -gt 0) {
     Write-Output ''
