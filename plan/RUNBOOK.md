@@ -46,6 +46,42 @@ This repository is organised as follows:
 .\scripts\Rename-MyFiles.ps1 -FolderPath "C:\Documents\MyUnfiledFolder" -WhatIf
 ```
 
+Example dry-run output with smart skip (files with good names are skipped to save cost):
+
+```
+Scanning folder: C:\Documents\MyUnfiledFolder
+Found 6 file(s). Processing...
+
+   SKIPPED  Invoice - 2025-02-15.pdf -- already descriptive
+   PROPOSED scan0042.pdf  ->  Acme Ltd Contract Renewal - 13th January 2026.pdf
+   SKIPPED  Tax Return 2024.xlsx -- already descriptive
+   PROPOSED Document (3).docx  ->  Smith Family Medical Records.docx
+   SKIPPED  photo.jpg -- unsupported or unreadable
+   PROPOSED letter.txt  ->  Dr Brown Appointment Confirmation - 20 February 2026.txt
+
+-------------------------------------
+ Summary
+-------------------------------------
+ Files scanned    : 6
+ Files renamed    : 3
+ Files skipped    : 3
+
+ Skip breakdown:
+   - Already descriptive : 2
+   - Unsupported         : 1
+-------------------------------------
+```
+
+## Run (Force Rename Everything)
+
+To rename all files regardless of their current name quality:
+
+```powershell
+.\scripts\Rename-MyFiles.ps1 -FolderPath "C:\Documents\MyUnfiledFolder" -Force -WhatIf
+```
+
+With `-Force`, the smart skip is disabled and all readable files are processed by Azure AI.
+
 ## Run (Rename)
 
 ```powershell

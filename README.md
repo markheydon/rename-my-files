@@ -92,8 +92,23 @@ If PdfPig is loaded, you will see: `"Successfully loaded PdfPig from: ..."`
 | `-DeploymentName` | No | Model deployment name (default `gpt-4o-mini`) |
 | `-RequestThrottleSeconds` | No | Delay between API calls (default is conservative for low quota/cost) |
 | `-MaxPromptCharacters` | No | Max content sent per file (default is low-cost) |
+| `-Force` | No | Force rename even if filename already looks descriptive |
 | `-WhatIf` | No | Preview renames without changing files |
 | `-Verbose` | No | Show detailed progress |
+
+### Smart Skip (Cost Saving)
+
+By default, files with already-descriptive names (containing dates and business keywords like "Invoice", "Letter", "Tax Return") are **skipped without calling Azure AI**. This saves cost and quota.
+
+To rename all files regardless of their current name quality, use `-Force`:
+
+```powershell
+.\scripts\Rename-MyFiles.ps1 -FolderPath "C:\Documents" -Force
+```
+
+Example skip reasons:
+- `already descriptive` — File already has a good name (e.g. `Invoice - 2025-02-15.pdf`)
+- `Filename unchanged` — Azure AI suggested the same name as current
 
 
 ## Current behaviour and limits

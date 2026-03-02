@@ -33,6 +33,10 @@
     Maximum characters sent to Azure OpenAI from each file (default: 900).
     Lower values reduce token usage and cost per file. Default is set for low-cost operation.
 
+.PARAMETER Force
+    Force rename even if the current filename already appears descriptive.
+    By default, files with good names (containing dates and business keywords) are skipped to save cost.
+
 .PARAMETER WhatIf
     Shows what files would be renamed without actually renaming them.
 
@@ -81,7 +85,10 @@ param (
 
     [Parameter(HelpMessage = 'Maximum number of characters sent to Azure OpenAI from each file (lower values reduce token usage).')]
     [ValidateRange(400, 8000)]
-    [int]$MaxPromptCharacters = 900
+    [int]$MaxPromptCharacters = 900,
+
+    [Parameter(HelpMessage = 'Force rename even if current filename appears already descriptive.')]
+    [switch]$Force
 )
 
 Set-StrictMode -Version Latest
@@ -490,6 +497,57 @@ function Resolve-UniqueFilePath {
 }
 
 # ---------------------------------------------------------------------------
+# Helper: Detect if a filename appears to already be descriptive.
+# Returns $true if filename contains date patterns AND business keywords,
+# suggesting it's already a good name and doesn't need renaming.
+# ---------------------------------------------------------------------------
+function Test-FilenameIsDescriptive {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory)]
+        [string]$FileName
+    )
+
+    # Remove extension for analysis.
+    $nameWithoutExt = [System.IO.Path]::GetFileNameWithoutExtension($FileName)
+
+    # Business keywords indicating a file likely has good structure.
+    $businessKeywords = @(
+        'invoice', 'receipt', 'statement', 'letter', 'report', 'agreement',
+        'contract', 'proposal', 'quote', 'order', 'payment', 'tax', 'return',
+        'refund', 'certification', 'license', 'policy', 'procedure', 'manual',
+        'specification', 'estimate', 'schedule', 'summary', 'analysis', 'plan',
+        'budget', 'forecast', 'audit', 'assessment', 'checklist', 'form',
+        'application', 'renewal', 'confirmation', 'notification', 'appointment',
+        'fee', 'charge', 'bill'
+    )
+
+    # Check for date patterns (case-insensitive).
+    $hasDate = ($nameWithoutExt -match '\d{4}-\d{2}-\d{2}') -or  # YYYY-MM-DD
+               ($nameWithoutExt -match '\d{1,2}/\d{1,2}/\d{2,4}') -or  # MM/DD/YYYY or DD/MM/YYYY
+               ($nameWithoutExt -match '(?i)(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4}') -or  # Month YYYY
+               ($nameWithoutExt -match '(?i)(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{4}') -or  # Mon YYYY
+               ($nameWithoutExt -match '\b(20|19)\d{2}\b')  # 4-digit year
+
+    if (-not $hasDate) {
+        Write-Verbose "Test-FilenameIsDescriptive: '$FileName' has no date pattern. Not descriptive."
+        return $false  # No date = likely not descriptive enough.
+    }
+
+    # Check for business keywords (case-insensitive).
+    foreach ($keyword in $businessKeywords) {
+        if ($nameWithoutExt -match "(?i)\b$keyword\b") {
+            Write-Verbose "Test-FilenameIsDescriptive: '$FileName' has date + keyword '$keyword'. Descriptive."
+            return $true  # One keyword + date is a good sign.
+        }
+    }
+
+    # Date present but no keywords; consider format-only names like "scan0042" or "Document (3)" as NOT descriptive.
+    Write-Verbose "Test-FilenameIsDescriptive: '$FileName' has date but no business keywords. Not descriptive."
+    return $false
+}
+
+# ---------------------------------------------------------------------------
 # Main processing
 # ---------------------------------------------------------------------------
 
@@ -515,10 +573,21 @@ Write-Output "Found $($files.Count) file(s). Processing..."
 
 $countRenamed  = 0
 $countSkipped  = 0
+$countUnchanged = 0
+$countDescriptive = 0
 $skippedFiles  = [System.Collections.Generic.List[PSCustomObject]]::new()
 
 foreach ($file in $files) {
     Write-Verbose "Processing: $($file.Name)"
+
+    # Step 0: Check if current filename is already descriptive (and user didn't force).
+    if (-not $Force -and (Test-FilenameIsDescriptive -FileName $file.Name)) {
+        Write-Output "  SKIPPED  $($file.Name) -- already descriptive"
+        $skippedFiles.Add([PSCustomObject]@{ Name = $file.Name; Reason = 'Already descriptive' })
+        $countSkipped++
+        $countDescriptive++
+        continue
+    }
 
     # Step 1: Read content.
     $content = Get-FileTextContent -File $file
@@ -560,7 +629,16 @@ foreach ($file in $files) {
         continue
     }
 
-    # Step 4: Resolve a unique destination path.
+    # Step 4: Check if proposed filename is identical to current filename.
+    if ([string]::Equals($sanitised, [System.IO.Path]::GetFileNameWithoutExtension($file.Name), [System.StringComparison]::OrdinalIgnoreCase)) {
+        Write-Output "  SKIPPED  $($file.Name) -- filename unchanged"
+        $skippedFiles.Add([PSCustomObject]@{ Name = $file.Name; Reason = 'Filename unchanged' })
+        $countSkipped++
+        $countUnchanged++
+        continue
+    }
+
+    # Step 5: Resolve a unique destination path.
     $destinationPath = Resolve-UniqueFilePath `
         -Directory $file.DirectoryName `
         -BaseName $sanitised `
@@ -568,7 +646,7 @@ foreach ($file in $files) {
 
     $newName = Split-Path $destinationPath -Leaf
 
-    # Step 5: Rename (or preview in -WhatIf mode).
+    # Step 6: Rename (or preview in -WhatIf mode).
     if ($PSCmdlet.ShouldProcess($file.Name, "Rename to '$newName'")) {
         try {
             Rename-Item -LiteralPath $file.FullName -NewName $newName -ErrorAction Stop
@@ -595,9 +673,20 @@ Write-Output ''
 Write-Output '-------------------------------------'
 Write-Output ' Summary'
 Write-Output '-------------------------------------'
-Write-Output " Files scanned : $($files.Count)"
-Write-Output " Files renamed : $countRenamed"
-Write-Output " Files skipped : $countSkipped"
+Write-Output " Files scanned    : $($files.Count)"
+Write-Output " Files renamed    : $countRenamed"
+Write-Output " Files skipped    : $countSkipped"
+
+if ($countDescriptive -gt 0 -or $countUnchanged -gt 0) {
+    Write-Output ''
+    Write-Output ' Skip breakdown:'
+    if ($countDescriptive -gt 0) {
+        Write-Output "   - Already descriptive : $countDescriptive"
+    }
+    if ($countUnchanged -gt 0) {
+        Write-Output "   - Filename unchanged   : $countUnchanged"
+    }
+}
 
 if ($skippedFiles.Count -gt 0) {
     Write-Output ''

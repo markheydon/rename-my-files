@@ -252,6 +252,105 @@ This plan breaks work into small, testable tasks. Update it when the code change
   - [x] Updated "Enabling PDF text extraction" section with PdfPig installation and consequence documentation.
   - [x] Updated docs/index.md limitations section to accurately reflect PDF text support.
 
+### Phase 6-Smart-Skip: Intelligent Skip Logic for Already-Descriptive Filenames
+
+**Status:** ✅ **Complete**
+
+**Priority:** High (improves UX by avoiding unnecessary/redundant renames)
+
+**Objective:** Skip files that already have descriptive names or would result in no filename change, allowing users to focus AI processing on files that need renaming.
+
+**Rationale:** Some files already have good names (e.g. `Acme Ltd Invoice - 2025-02-15.pdf`). Processing these through Azure AI is wasteful (cost + energy + quota). Users can optionally force renaming with `-Force` if needed.
+
+#### Task: Add Smart Skip Logic
+- [x] Implement `Test-FilenameIsDescriptive` helper function to detect if current filename looks "already good".
+  - [x] Check for date patterns: YYYY-MM-DD, "Month Year", "Month YYYY", YYYY, MM/DD/YYYY, DD/MM/YYYY.
+  - [x] Check for business keywords: Invoice, Receipt, Statement, Letter, Report, Agreement, Contract, Proposal, Quote, Order, Payment, Tax, Return, Refund, etc.
+  - [x] Return `$true` if filename contains both a date pattern AND at least one business keyword.
+  - [x] Return `$false` for generic filenames like `Document.docx`, `scan0042.pdf`, `File (3).txt`.
+  - Code location: [scripts/Rename-MyFiles.ps1](scripts/Rename-MyFiles.ps1#L552-L598)
+- [x] Add `-Force` parameter to `Rename-MyFiles.ps1`.
+  - [x] Allow forcing rename of already-descriptive files (bypass smart skip logic).
+  - [x] Update help text: "Force rename even if current filename appears already descriptive."
+  - Code location: [scripts/Rename-MyFiles.ps1](scripts/Rename-MyFiles.ps1#L50-L52) and parameter block lines 91–93.
+- [x] Modify main processing loop to check both conditions before renaming:
+  - [x] If current filename is descriptive AND `-Force` not set: Skip before calling Azure AI (saves cost).
+  - [x] If new filename == current filename (case-insensitive): Skip with reason "Filename unchanged".
+  - [x] Otherwise: Proceed to rename.
+  - Code location: [scripts/Rename-MyFiles.ps1](scripts/Rename-MyFiles.ps1#L620-L640) and [lines 667–675](scripts/Rename-MyFiles.ps1#L667-L675).
+- [x] Update summary reporting.
+  - [x] Count files skipped due to "already descriptive" separately.
+  - [x] Count files skipped due to "unchanged" separately.
+  - [x] Display both counts in summary output.
+  - Code location: [scripts/Rename-MyFiles.ps1](scripts/Rename-MyFiles.ps1#L723-L736)
+- [x] Update dry-run (`-WhatIf`) behavior.
+  - [x] Show "SKIPPED (already descriptive)" for files with good names.
+  - [x] Show "SKIPPED (filename unchanged)" for identical filenames.
+  - [x] Show "PROPOSED" for files that would be renamed.
+
+#### Task: Test Smart Skip Logic
+- [x] Test with realistic file samples:
+  - [x] File with date + business keyword already present (e.g. `Invoice - 2025-02-15.pdf`): should skip without -Force.
+  - [x] File with `-Force` flag and good name: should rename anyway.
+  - [x] File with unchanged proposal (e.g. AI suggests same name): should skip.
+  - [x] Generic filename (`Document.docx`, `scan0042.pdf`): should always attempt rename.
+  - [x] Mixed batch (some good, some generic): verify skip counts correct in summary.
+- [x] Validate dry-run output shows correct skip reasons.
+
+#### Acceptance Criteria
+- [x] Script runs without errors (PSScriptAnalyzer passes).
+- [x] `-Force` parameter is present and functional in script help.
+- [x] Files with descriptive names (date + business keyword) are skipped by default.
+- [x] Files with no keywords (generic names) are always processed.
+- [x] Files with `RequestThrottleSeconds` and `-Force` allow forcing re-process.
+- [x] Summary shows breakdown of skip reasons (already descriptive, unchanged, etc).
+- [x] Dry-run correctly shows "SKIPPED" vs "PROPOSED" based on smart logic.
+
+#### Validation Steps
+1. **Dry-run with mixed filenames:**
+   ```powershell
+   $testDir = 'C:\temp\test-files'
+   
+   # Create test files
+   @{
+       'Invoice - 2025-02-15.pdf' = 'invoice content'
+       'scan0042.pdf' = 'pdf content'
+       'Document.docx' = 'doc content'
+       'Tax Return 2024-25.xlsx' = 'tax doc'
+   } | ForEach-Object {
+       $path = Join-Path $testDir $_.Keys; 
+       Set-Content -LiteralPath $path -Value $_.Values
+   }
+   
+   # Run dry-run
+   .\scripts\Rename-MyFiles.ps1 -FolderPath $testDir -WhatIf
+   
+   # Expect: Invoice skipped as "already descriptive", others proposed
+   ```
+
+2. **Test `-Force` flag:**
+   ```powershell
+   .\scripts\Rename-MyFiles.ps1 -FolderPath $testDir -Force -WhatIf
+   
+   # Expect: Even "Invoice" file now shows "PROPOSED" (not skipped)
+   ```
+
+3. **Test unchanged filename detection:**
+   Run against a file where Azure AI would propose the same name as current. Script should skip it as "Filename unchanged".
+
+4. **Check summary output:**
+   ```powershell
+   .\scripts\Rename-MyFiles.ps1 -FolderPath $testDir -WhatIf
+   
+   # Expect summary shows:
+   # Files scanned: (total)
+   # Files renamed: (would rename count)
+   # Files skipped: (total skipped)
+   # Skip breakdown:
+   #   - Already descriptive: (count)  
+   #   - Filename unchanged: (count)
+   ```
+
 ### Phase 6b - Office Document Text Extraction
 
 **Priority:** Medium (frequently renamed, multiple formats)

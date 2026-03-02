@@ -105,6 +105,31 @@ This will show you proposed renames **without actually changing anything**. Revi
 
 ---
 
+## Smart Skip (Saving Cost and Quota)
+
+The tool automatically **skips files that already have good names** to save cost and quota. Files with dates and business keywords (like "Invoice", "Contract", "Tax Return") are considered already descriptive and are skipped without calling Azure AI.
+
+### Example Skip Reasons
+
+| File | Reason | Called AI? |
+|------|--------|-----------|
+| `Invoice - 2025-02-15.pdf` | Already descriptive | ❌ No |
+| `scan0042.pdf` | No, needs AI | ✅ Yes |
+| `Dr Smith Letter - 15 Feb 2025.txt` | Already descriptive | ❌ No |
+| `Document (3).docx` | No, needs AI | ✅ Yes |
+
+### Force Rename Everything
+
+If you want to rename **all** files regardless of their current names, use `-Force`:
+
+```powershell
+.\scripts\Rename-MyFiles.ps1 -FolderPath "C:\Documents\MyUnfiledFolder" -Force
+```
+
+This tells the tool to process every file, even if it already looks descriptive. Useful if you want consistent naming across your entire collection.
+
+---
+
 ## Step 4 — Rename Your Files
 
 Once you are happy with the preview:
@@ -114,7 +139,8 @@ Once you are happy with the preview:
 ```
 
 The script will:
-- Read each file in the folder.
+- Check which files already have good names (skip them to save cost).
+- Read each file that might need renaming.
 - Ask Azure AI to suggest a descriptive name.
 - Rename the file, keeping the same extension.
 - Show a summary at the end.
@@ -125,7 +151,8 @@ Example output:
 Scanning folder: C:\Documents\MyUnfiledFolder
 Found 8 file(s). Processing...
 
-   RENAMED  scan0042.pdf  ->  Acme Ltd Invoice - February 2025.pdf
+   SKIPPED  Invoice - 2025-02-15.pdf -- already descriptive
+   RENAMED  scan0042.pdf  ->  Acme Ltd Invoice - January 2025.pdf
    RENAMED  Document (3).docx  ->  HMRC Self Assessment Tax Return 2024-25.docx
    SKIPPED  photo.jpg -- Unsupported or unreadable file type
    RENAMED  letter.txt  ->  Dr Smith Referral Letter - John Doe.txt
@@ -133,9 +160,13 @@ Found 8 file(s). Processing...
 -------------------------------------
  Summary
 -------------------------------------
- Files scanned : 8
- Files renamed : 3
- Files skipped : 1
+ Files scanned    : 8
+ Files renamed    : 3
+ Files skipped    : 5
+
+ Skip breakdown:
+   - Already descriptive : 1
+   - Unsupported         : 1
 -------------------------------------
 ```
 
