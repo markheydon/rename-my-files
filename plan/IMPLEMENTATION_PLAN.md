@@ -4,13 +4,15 @@ This plan breaks work into small, testable tasks. Update it when the code change
 
 ## Current State Snapshot
 
-**MVP Status:** ✅ **Complete** — All phases 0–5 are finished. Core features are functional and documented.
+**MVP Status:** ✅ **Complete** — All phases 0–5 are finished. Core features are functional and documented. Phase 6 in progress: PDF extraction and intelligent skip logic complete; image and office document extraction pending.
 
 ### What Works Now
 
 - Scripts run locally with PowerShell 7; cross-platform ready (Windows, macOS, Linux).
 - `Rename-MyFiles.ps1`
   - Reads plain-text files (`.txt`, `.md`, `.csv`, `.log`, `.json`, `.xml`, `.html`, `.yaml`, etc.)
+  - Extracts text from PDF files using PdfPig (requires optional `Install-Dependencies.ps1`).
+  - Smart skip: Files with descriptive names (date + business keyword) are skipped to save cost.
   - Uses Azure OpenAI REST API directly for filename proposals.
   - Implements dry-run via `ShouldProcess` with `-WhatIf` support.
   - Handles per-file errors without stopping the batch.
@@ -18,7 +20,8 @@ This plan breaks work into small, testable tasks. Update it when the code change
   - Truncates filenames to Windows limits (255 chars).
   - Makes Windows reserved names safe (e.g., `CON` → `CON_file`).
   - Limits content sent to Azure AI to 8000 characters.
-  - Prints summary of renamed/skipped/failed counts.
+  - Prints summary of renamed/skipped/failed counts with skip breakdowns.
+  - `-Force` flag allows overriding smart skip logic for descriptive filenames.
 - `Deploy-RenameMyFiles.ps1`
   - Uses Azure CLI (`az`) with built-in Bicep support (no separate installation).
   - Creates resource group, Azure OpenAI resource, and GPT-4o mini deployment.
@@ -27,17 +30,18 @@ This plan breaks work into small, testable tasks. Update it when the code change
   - Uses Azure CLI (`az`) for safe resource group deletion.
   - Prompts for confirmation; supports `–Force` flag.
 - All documentation (README, user guide, runbook) updated to reflect current behaviour and limitations.
-- Architecture decisions documented in `DECISIONS/` (ADR-0002, ADR-0003, ADR-0004).
+- Architecture decisions documented in `DECISIONS/` (ADR-0001 through ADR-0005).
 
-### Known Limitations (MVP)
+### Known Limitations (Current Implementation)
 
-- **Plain-text files:** Fully supported (text extraction works).
-- **PDF files:** Use filename context only (no text extraction yet). See Phase 6.
-- **Office documents (`.doc`, `.docx`, `.xls`, `.xlsx`, `.ppt`, `.pptx`):** Use filename context only (no text extraction yet). See Phase 6.
-- **Image formats (`.jpg`, `.jpeg`, `.png`, `.gif`, `.bmp`, `.tiff`, `.webp`):** Skipped automatically (no OCR/vision support in MVP).
-- **Other unsupported file types (binary, archives, executables, media):** Skipped automatically.
-- **Subfolder recursion:** Not supported; only top-level files processed.
+- **Plain-text files (MVP):** Fully supported (text extraction works).
+- **PDF files (Phase 6a):** ✅ Text content is extracted using PdfPig (optional dependency). Requires `Install-Dependencies.ps1`. Scanned/encrypted PDFs are skipped.
+- **Image files (JPEG, PNG) (Phase 6b):** ⏳ Not yet supported. Being added in Phase 6b based on user priority. Scanned documents and photos are a primary use case.
+- **Office documents (Phase 6c):** Currently use filename context only (no content extraction). Real extraction coming in Phase 6c.
+- **Other file types (GIF, BMP, TIFF, SVG, etc.):** Skipped automatically.
+- **Subfolder recursion:** Not supported; only top-level files processed. Could be added as `-Recurse` flag in future.
 - **AI-generated names are suggestions:** May not always be perfect; always preview with `-WhatIf` first.
+- **Smart skip limitation:** Files with dates but no business keywords are not skipped, even if the name is reasonable. Use `-Force` to skip the smart-skip check.
 
 ## Phase 0 - Cross-Platform Azure Tooling Migration
 
@@ -351,7 +355,60 @@ This plan breaks work into small, testable tasks. Update it when the code change
    #   - Filename unchanged: (count)
    ```
 
-### Phase 6b - Office Document Text Extraction
+### Phase 6b - Image Processing
+
+**Status:** ⏳ **Not Started**
+
+**Priority:** High (most common file type users scan and dump: scanned documents, receipts, photos)
+
+**Objective:** Add support for image files (primarily JPEG, PNG) by using Optical Character Recognition (OCR) or vision-based AI to extract content and propose filenames.
+
+**Rationale:** Users frequently scan documents (invoices, receipts, letters) as images and need them renamed. Images are likely the primary real-world use case after plain-text files. This phase brings image support previously considered out-of-scope into the active pipeline.
+
+#### Task: Research & Select Image Processing Method
+- [ ] Investigate image processing options:
+  - **Azure Computer Vision (Read API):** Cloud service, provides OCR; costs per image; requires additional Azure SDK.
+  - **Tesseract (CLI):** Free, open-source, cross-platform OCR; requires external tool installation and PATH setup.
+  - **IronOCR (.NET library):** Commercial library, cross-platform; licensing restrictions.
+  - **Azure OpenAI Vision:** Multimodal model (GPT-4V); send image pixels directly for filename proposals; may be cost-effective.
+- [ ] Evaluation criteria:
+  - Format coverage (.jpg, .jpeg, .png minimum; .gif, .bmp optional).
+  - Cross-platform support (Windows, macOS, Linux).
+  - Installation ease (NuGet preferred over external utilities).
+  - Licensing (open source or permissive, no commercial restrictions).
+  - Cost per image vs plain-text processing.
+  - Privacy implications (sending image pixels to third parties vs OCR locally).
+- [ ] Document recommendation and rationale in [DECISIONS/ADR-000X-image-processing.md](DECISIONS/) (future ADR).
+  - Compare OCR + existing filename prompt vs direct vision model approach.
+  - Calculate cost implications for typical batch (e.g., 100 scanned documents).
+
+#### Task: Implement Image Processing
+- [ ] Modify `Get-FileTextContent` function in [scripts/Rename-MyFiles.ps1](scripts/Rename-MyFiles.ps1).
+  - [ ] Add support for `.jpg`, `.jpeg`, `.png` image formats.
+  - [ ] Extract text via chosen method (OCR library or vision API).
+  - [ ] Return extracted text up to 8000 characters (existing limit).
+  - [ ] Handle unsupported/corrupted/unreadable images by catching errors and skipping gracefully.
+  - [ ] Return $null only for truly unsupported formats.
+- [ ] Add optional prerequisite documentation (if library requires installation).
+  - [ ] Specify exact NuGet package/utility version and installation steps.
+  - [ ] Document installation for Windows, macOS, and Linux.
+- [ ] Test with realistic image samples:
+  - [ ] Scanned PDF-as-image (JPEG of invoice).
+  - [ ] Photo of receipt or letter.
+  - [ ] Handwritten image (test OCR limits).
+  - [ ] Corrupted/unreadable image.
+  - [ ] Verify error handling does not stop batch processing.
+- [ ] Update user-guide.md to document image support with caveats.
+  - [ ] Note limitations (handwriting, very low resolution, non-text content like diagrams).
+  - [ ] Clarify cost implications if using vision API.
+
+#### Acceptance Criteria
+- [ ] Script runs without errors when processing mixed batches (text + PDF + images).
+- [ ] Images with readable text are processed; unreadable images are skipped with reason.
+- [ ] Summary report includes image processing results.
+- [ ] Documentation updated for end users.
+
+### Phase 6c - Office Document Text Extraction
 
 **Priority:** Medium (frequently renamed, multiple formats)
 
@@ -389,7 +446,11 @@ This plan breaks work into small, testable tasks. Update it when the code change
   - Note format support (.docx, .xlsx, .pptx, etc.).
   - Note limitations (password-protected, corrupted, etc.).
 
-### Phase 6c - Validation & Release
+### Phase 7 - Validation & Release
+
+**Status:** ⏳ **Not Started**
+
+**Objective:** Comprehensive final testing and validation before any official release or public announcement.
 
 - [ ] Test cross-platform behaviour:
   - Windows (native .NET on Windows or .NET Core).
@@ -405,62 +466,67 @@ This plan breaks work into small, testable tasks. Update it when the code change
 - [ ] Update [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) to mark Phase 6 complete.
 - [ ] Update [README.md](README.md) **Current Limitations** section to reflect new extraction capabilities.
 
-## Future Enhancements (Out of Scope — Not Planned)
+## Future Enhancements (Out of Scope — Not Immediately Planned)
 
-These features are documented as potential future work but are **not in scope** per [SCOPE.md](SCOPE.md):
+These features are documented as potential future work beyond Phase 7 validation:
 
 - **Recursive subfolder processing** — Current design processes only top-level files to keep behaviour straightforward. Could be added as a flag (e.g., `-Recurse`) in a future version.
 - **Batch capacity optimisation** — Scale to 10,000+ files by increasing Azure OpenAI TPM (tokens per minute) quota. Requires quota adjustments and batching logic.
 - **Alternative AI backends** — Currently Azure OpenAI only. Other providers (OpenAI API, Anthropic Claude, etc.) could be added, but would require new integration code and testing.
 - **GUI or web interface** — Current CLI approach is lightweight and cross-platform. A GUI could improve UX for non-technical users but adds complexity and platform-specific dependencies.
 - **File content modification** — Explicitly out of scope. This tool **only renames**; it never edits file contents.
+- **Advanced image understanding** — Handwriting recognition, diagram understanding, multi-modal vision at scale (beyond basic OCR).
 
 ## Assumptions & Design Decisions
 
-### Current Implementation (MVP, Phases 0–5)
+### Current Implementation (MVP Phases 0–5, Phase 6 In Progress)
 
 - **No automated tests:** Validation is manual (dry-run testing, visual inspection). Test harness to be added in future if needed.
-- **Azure OpenAI only:** Single AI backend simplifies code and deployment. Alternative providers deferred to post-MVP.
+- **Azure OpenAI only:** Single AI backend simplifies code and deployment. Alternative providers deferred to post-Phase 7.
 - **Credential passing:** Users supply credentials via environment variables (`AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_KEY`) or script parameters for flexibility.
 - **PowerShell 7.2+:** Required for cross-platform support (`$PSVersionTable.PSVersion`). Tested on Windows; untested on macOS/Linux but theoretically compatible.
 - **Azure CLI (az):** Must be installed; verified at script runtime via `Get-Command az`.
 - **Bicep built-in:** Azure CLI includes Bicep compiler; no separate installation needed.
 - **Soft-delete handling:** Bicep property `restore: true` automatically restores recently soft-deleted Azure OpenAI resources during redeployment.
 - **GlobalStandard deployment:** Data may be processed in any Azure region; stricter alternatives (DataZoneStandard, Regional Standard) available at higher cost (documented in ADR-0003).
-- **Plain-text extraction only:** MVP supports `.txt`, `.md`, `.csv`, `.log`, `.json`, `.xml`, `.html`, `.yaml`, `.yml`. PDF and Office use filename context only (Phase 6).
+- **Plain-text extraction (MVP):** Fully supported. PDF extraction (Phase 6a) and smart-skip logic (Phase 6-Smart-Skip) also complete.
+- **Image support priority:** Now prioritised in Phase 6b based on user research showing scanned documents (PDFs, images) are the primary real-world use case.
 
 ### Phase 6 Assumptions (Post-MVP Enhancement)
 
-- **Cross-platform extraction:** PDF and Office extraction must work on Windows, macOS, and Linux without commercial licenses (rules out COM-based Excel, Word APIs).
-- **Library preference:** Favour .NET libraries (via NuGet) over external CLI utilities for better portability and consistency.
-- **Graceful degradation:** If extraction fails (malformed, encrypted, unsupported format), fall back to filename context rather than skip the file.
-- **8000-character limit:** Maintain existing truncation for remaining phases to control Azure OpenAI token usage and costs.
-- **No new mandatory dependencies:** If Phase 6 introduces dependencies, they should be optional or installable via standard package managers (NuGet, Homebrew, apt) without commercial licensing overhead.
+- **User motivation:** Primary real-world use case is renaming scanned documents (PDFs, images) and generic files. Phase 6 prioritises content extraction (PDF, images, Office) and smart skip logic to address this core need.
+- **Cross-platform extraction:** All extraction methods (PDF, images, Office) must work on Windows, macOS, and Linux without commercial licenses.
+- **Library preference:** Favour .NET libraries (via NuGet) or fully free/open-source tools (OCR utilities) over paid cloud services or external utilities requiring PATH setup.
+- **Graceful degradation:** If extraction fails (malformed, encrypted, unreadable), skip the file gracefully rather than stopping the batch.
+- **8000-character limit:** Maintain existing truncation for all extraction phases to control Azure OpenAI token usage and costs.
+- **Optional dependencies:** Image and Office extraction libraries are optional. Users can install them (e.g., `Install-Dependencies.ps1`) if needed; files are skipped with clear guidance if dependencies are missing.
+- **Image support priority:** Images (Phase 6b) are prioritised before Office documents (Phase 6c) because scanned documents are a primary motivation for this tool.
 
-## Phase 7 - Image Support Feasibility (Out of Scope Validation)
+## Phase 8 - Future Considerations: Expanded Features (Out of Scope)
 
 **Status:** ⏳ **Not Started**
 
-**Objective:** Validate whether image files should remain out of scope or move into a future scope update with explicit OCR/vision trade-offs.
+**Objective:** Evaluate longer-term enhancements beyond the current Phase 6 focus.
 
-### Planned Tasks
+### 8a - Deeper Image Understanding (Future Research)
 
-- [ ] Document current behaviour in code and docs as a baseline.
-  - [ ] Confirm `Get-FileTextContent` returns `$null` for image formats in [scripts/Rename-MyFiles.ps1](scripts/Rename-MyFiles.ps1).
-  - [ ] Ensure docs state image formats are skipped in MVP.
-- [ ] Evaluate two implementation paths (research only; no code changes):
-  - [ ] **OCR path:** Extract text from images first, then use existing filename prompt flow.
-  - [ ] **Vision path:** Send image content to a multimodal model for direct filename proposals.
-- [ ] Capture cost and operational implications for both paths.
-  - [ ] Estimate per-image token/processing cost impact vs plain text.
-  - [ ] Note latency impact and likely throughput reduction for large batches.
-  - [ ] Note privacy implications for sending image pixels vs extracted text.
-- [ ] Record decision in a future ADR and update [SCOPE.md](SCOPE.md) only if image support is approved.
+Once basic OCR-based image support is in place (Phase 6b), consider:
 
-### Why This Phase Exists
+- [ ] Advanced OCR for handwriting and complex layouts.
+- [ ] Multi-modal vision models for direct image-to-filename proposals (e.g., GPT-4 Vision at scale).
+- [ ] Diagram and table recognition for technical documents.
 
-- [SCOPE.md](SCOPE.md) currently defines image understanding as out of scope for MVP.
-- This phase prevents accidental scope expansion while still keeping a testable decision trail.
-- Image support is not equivalent to current PDF placeholder behaviour; it requires OCR or multimodal processing.
+### 8b - Recursive Folder Processing
 
-**Assumption:** Until scope changes are explicitly approved, image files remain intentionally unsupported and skipped.
+Currently out of scope. Future enhancement could add:
+
+- [ ] `-Recurse` flag to process subfolders and nested directories.
+- [ ] Preservation of folder hierarchy in renamed files (optional prefixing or flattening).
+
+### 8c - Batch Optimisation
+
+- [ ] Scale to 10,000+ files by optimising Azure OpenAI quota and batching logic.
+- [ ] Parallel processing (with rate-limit awareness) to reduce total runtime.
+- [ ] Resume capability for interrupted batches.
+
+**Note:** These features are intentionally deferred to allow focus on core Phase 6 capabilities (PDF, images, Office documents) and Phase 7 validation.
