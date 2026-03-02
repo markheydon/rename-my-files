@@ -262,5 +262,5 @@ This permanently deletes the Azure resource group and everything in it. You will
 
 ## Getting Help
 
-- Open a [GitHub Issue](https://github.com/markheydon/rename-my-files/issues) if you encounter a bug.
+- Open a [GitHub Issue](https://github.com/markheydon/rename-my-files-ai/issues) if you encounter a bug.
 - For Azure-related problems, check the [Azure OpenAI documentation](https://learn.microsoft.com/azure/ai-services/openai/).
