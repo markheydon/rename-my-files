@@ -111,7 +111,7 @@ See [GitHub CLI documentation](https://cli.github.com) or [Awesome Copilot's gh-
 
 ## Project Board Integration
 
-### Personal Project Board Assignment
+### Mark's Personal Project Board Assignment
 
 Non-epic issues in **active (current phase) milestones** should be added to your personal project board at [github.com/users/markheydon/projects/6](https://github.com/users/markheydon/projects/6).
 
