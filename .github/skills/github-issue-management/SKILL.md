@@ -16,7 +16,7 @@ This skill provides universal GitHub Issue management conventions for AI-powered
 - Update issues with status, comments, and links to PRs.
 - Close issues when tasks are completed.
 - Use parent/child issue linking (GitHub's native feature) to connect tasks to epic parents.
-- Apply labels consistently using the `.github/skills/github-issue-management/SKILL.md` skill.
+- Apply labels consistently using the definitions in `.github/skills/github-issue-management/references/LABELS.md`.
 - Follow repository-specific conventions documented in `.github/instructions/github-issue-management.instructions.md`.
 
 ## Label Strategy
