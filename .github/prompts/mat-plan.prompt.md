@@ -5,7 +5,7 @@ argument-hint: "scope change or new behaviour"
 model: Auto (copilot)
 ---
 
-Use  `plan/SCOPE.md` and current code to update `plan/IMPLEMENTATION_PLAN.md`. Reference `.github/skills/plan-management/` for format consistency. Keep tasks small and testable. Note any assumptions.
+Use `plan/SCOPE.md` and current code to update `plan/IMPLEMENTATION_PLAN.md`. Reference `.github/skills/plan-management/` for format consistency. Keep tasks small and testable. Note any assumptions.
 
 For all GitHub Issue management — creating epics and stories, applying labels, assigning milestones, project board rules, parent/child linking, label cleanup, and periodic sweeps — follow:
 
