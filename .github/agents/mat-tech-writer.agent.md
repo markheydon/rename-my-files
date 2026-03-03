@@ -2,6 +2,7 @@
 name: MAT Tech Writer
 description: Keep docs aligned with the current implementation.
 model: GPT-4.1 (copilot)
+tools: [read, edit, search]
 ---
 
 ## Responsibilities
