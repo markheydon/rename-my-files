@@ -35,7 +35,7 @@ create tasks such as "Documentation update" or "Testing" as these are not action
    - Link to parent epic using GitHub's **parent issue feature** (manual step; see note below)
    - Include acceptance criteria and task checklist in description
 
-4. **Asign to Mark's Personal Project Board** if in an active milestone and not labeled `out-of-scope` (see instructions file for project board rules).
+4. **Assign to Mark's Personal Project Board** if in an active milestone and not labeled `out-of-scope` (see instructions file for project board rules).
 
 ### Parent/Child Linking
 
