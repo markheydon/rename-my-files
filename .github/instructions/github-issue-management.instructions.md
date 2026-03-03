@@ -306,7 +306,7 @@ gh project item-add PROJECT_ID --owner markheydon --repo rename-my-files-ai --is
 gh project item-add 6 --owner markheydon --repo rename-my-files-ai --issue 123
 ```
 
-**Automation note:** While issue creation/labeling/milestone assignment can be fully automated via `gh` CLI, **project board addition is best done manually** (via web UI) during the `mat-plan` workflow. The `gh project` commands work but require knowing the numeric project ID, and manual addition ensures you review which active tasks actually belong on your board (respecting the `out-of-scope` exclusion rule).
+**Automation note:** While issue creation/labelling/milestone assignment can be fully automated via `gh` CLI, **project board addition is best done manually** (via web UI) during the `mat-plan` workflow. The `gh project` commands work but require knowing the numeric project ID, and manual addition ensures you review which active tasks actually belong on your board (respecting the `out-of-scope` exclusion rule).
 
 ### Manual Steps Required
 
