@@ -43,7 +43,7 @@ Apply to indicate workflow state or blockers:
 - `waiting for details` — Incomplete issue; waiting for reporter to provide more information.
 
 ### Governance (As Needed)
-Apply for project management and prioritization:
+Apply for project management and prioritisation:
 - `out-of-scope` — Intentionally deferred beyond current release.
 - `priority-high` — High-priority work (omit medium/low to reduce noise).
 - `not-started` — Epic that hasn't started active work yet.
