@@ -33,7 +33,7 @@ Labels that indicate workflow state or blockers. Apply **as needed** to show cur
 | `waiting for details` | Incomplete issue; waiting for reporter to provide info | `EDEDED` |
 
 ### Governance
-Labels for project management and prioritization. Apply **as needed** for special handling:
+Labels for project management and prioritisation. Apply **as needed** for special handling:
 
 | Label | Description | Color |
 |-------|-------------|-------|
