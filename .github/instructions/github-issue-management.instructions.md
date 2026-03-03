@@ -57,7 +57,7 @@ This section defines **what** Milestones, Epics, Stories, and Tasks are, **when*
 ✅ **Create an epic only if:**
 - There are **3+ related stories** that form a cohesive capability
 - The stories are tightly related (same feature area, same technology)
-- Grouping provides meaningful organization beyond the milestone
+- Grouping provides meaningful organisation beyond the milestone
 
 ❌ **Do NOT create an epic if:**
 - The phase has fewer than 3 stories
