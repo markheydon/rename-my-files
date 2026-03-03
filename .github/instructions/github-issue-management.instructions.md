@@ -31,47 +31,207 @@ This file contains repository-specific GitHub Issue management **conventions and
 - Milestone assignment derived from phase location in `plan/IMPLEMENTATION_PLAN.md`
 - **Out-of-scope work** (deferred features) gets milestone assignment + `out-of-scope` label
 
+## Issue Hierarchy Framework
+
+This section defines **what** Milestones, Epics, Stories, and Tasks are, **when** to create them, and **how** they map to GitHub features.
+
+### Definitions and GitHub Mapping
+
+| Concept | Purpose | GitHub Feature | Example |
+|---------|---------|----------------|---------|
+| **Milestone** | Timeline/delivery grouping. Answers: "WHEN is this being delivered?" | GitHub Milestone | "Phase 6: Enhanced Content Extraction" |
+| **Epic** | Large feature set requiring multiple stories. Answers: "WHAT cohesive capability?" | GitHub Issue with `epic` label | "PDF Text Extraction Support" (if 3+ related stories) |
+| **Story** | User-facing deliverable. Answers: "What can users DO now?" Maps to one PR/branch. | GitHub Issue with `story` label | "Add image OCR support for .jpg, .png files" |
+| **Task** | Implementation step within a story. Not shipped independently. | Checklist item in story's acceptance criteria | "Research Azure AI Vision API", "Implement error handling" |
+
+### When to Create Each Type
+
+#### Milestones (Always Create)
+
+✅ **Create one milestone per phase** from `plan/IMPLEMENTATION_PLAN.md`  
+✅ Every phase gets a milestone, even if it has only one story  
+✅ Milestone tracks delivery timeline, not feature grouping
+
+#### Epics (Only When Necessary)
+
+✅ **Create an epic only if:**
+- There are **3+ related stories** that form a cohesive capability
+- The stories are tightly related (same feature area, same technology)
+- Grouping provides meaningful organization beyond the milestone
+
+❌ **Do NOT create an epic if:**
+- The phase has fewer than 3 stories
+- The epic title/description would duplicate the milestone
+- It's a 1:1 epic-to-milestone mapping
+- Stories are too diverse to form a logical group
+
+**Decision rule:** If you can't explain why the epic is different from the milestone without just repeating the phase name, **don't create the epic**.
+
+#### Stories (Default Unit of Work)
+
+✅ **Create a story for each user-facing deliverable:**
+- One story = one PR = one merged branch
+- Completable in one sitting (or 2-3 max)
+- Delivers testable user value
+- Can be demonstrated to stakeholders
+
+❌ **Do NOT split stories into:**
+- Separate "research" and "implement" stories (research is a task within the story)
+- Separate "documentation" or "testing" stories (these are tasks within acceptance criteria)
+- Artificially small chunks that don't deliver independent value
+
+**Story = Feature that ships to users**
+
+#### Tasks (Implementation Details)
+
+✅ **Tasks are checklist items within a story's acceptance criteria:**
+- Research/spike work
+- Implementation steps
+- Testing activities
+- Documentation updates
+- Code review items
+
+❌ **Tasks are NOT separate GitHub Issues**
+
+### Examples
+
+#### ✅ CORRECT: Phase with Multiple Related Stories (Epic Justified)
+
+**Scenario:** Phase has 6 stories for PDF, Image, and Office extraction
+
+```
+Milestone: Enhanced Content Extraction
+  ├─ Epic: PDF Text Extraction
+  │    ├─ Story: Extract text from simple PDFs
+  │    └─ Story: Handle complex PDF layouts
+  ├─ Epic: Image OCR Support
+  │    ├─ Story: Add OCR for scanned documents
+  │    └─ Story: Add OCR for photos with text
+  └─ Epic: Office Document Extraction
+       ├─ Story: Extract text from .docx files
+       └─ Story: Extract text from .xlsx and .pptx files
+```
+
+#### ✅ CORRECT: Phase with Few Stories (No Epic Needed)
+
+**Scenario:** Phase has 2 unrelated stories
+
+```
+Milestone: Enhanced Content Extraction
+  ├─ Story: Add image OCR support for .jpg, .png files
+  │    └─ Tasks (in acceptance criteria):
+  │         - [ ] Research and select OCR library (Azure AI Vision vs alternatives)
+  │         - [ ] Implement text extraction in Rename-MyFiles.ps1
+  │         - [ ] Add error handling for unsupported image formats
+  │         - [ ] Test with sample images (scanned docs, photos)
+  │         - [ ] Update README with OCR prerequisites
+  │
+  └─ Story: Add Office document text extraction (.docx, .xlsx, .pptx)
+       └─ Tasks (in acceptance criteria):
+            - [ ] Research and select extraction library
+            - [ ] Implement extraction in Rename-MyFiles.ps1
+            - [ ] Handle unsupported Office formats gracefully
+            - [ ] Test with sample Office files
+            - [ ] Document known limitations
+```
+
+#### ❌ WRONG: Artificially Split Stories
+
+**Don't do this:**
+```
+Story: Research image OCR approach
+Story: Implement image OCR
+Story: Test image OCR
+Story: Document image OCR
+```
+
+**Do this instead:**
+```
+Story: Add image OCR support for .jpg, .png files
+  - [ ] Research and select OCR method (task)
+  - [ ] Implement text extraction (task)
+  - [ ] Test with sample images (task)
+  - [ ] Update documentation (task)
+```
+
+#### ❌ WRONG: Epic Duplicating Milestone
+
+**Don't do this:**
+```
+Milestone: Validation and Release
+  └─ Epic: Validation and Release Readiness  ← This is just the milestone again!
+       └─ Story: Finalize release package
+```
+
+**Do this instead:**
+```
+Milestone: Validation and Release
+  └─ Story: Prepare and validate v1.0 release package
+       - [ ] Cross-platform testing (Windows, Linux, macOS)
+       - [ ] Finalize README and user documentation
+       - [ ] Create release artifacts
+       - [ ] Validate installation on clean systems
+```
+
+### Story-to-PR Mapping
+
+**Mental model:** One story = one branch = one pull request
+
+- Each story should result in a single merged PR to `main`
+- Multiple commits are fine (research findings, implementation, test fixes, code review changes)
+- But ultimately, the story ships as one cohesive unit of user value
+- If you find yourself creating multiple PRs for sub-tasks, you've probably split the story too far
+
 ## Issue Description Templates
 
-### Epic Issue Template
+### Story Issue Template (Most Common)
+
+```markdown
+## Description
+[What user-facing capability this delivers — derive from IMPLEMENTATION_PLAN.md]
+
+As a user, I can [user goal/benefit].
+
+## Acceptance Criteria and Tasks
+- [ ] Research and select approach ([decision criteria])
+- [ ] Implement [feature] in `scripts/Rename-MyFiles.ps1`
+- [ ] Add error handling for [edge cases]
+- [ ] Test with [sample scenarios]
+- [ ] Update README/documentation with [new capability]
+- [ ] Passes PSScriptAnalyzer with no errors
+
+## Related Files
+- `scripts/Rename-MyFiles.ps1`
+- `plan/IMPLEMENTATION_PLAN.md#phase-x`
+
+## Parent Epic (if applicable)
+See parent epic #[number]
+```
+
+### Epic Issue Template (Rarely Needed)
+
+**Only create if there are 3+ related stories that need grouping.**
 
 ```markdown
 ## Objective
 [High-level goal for this epic — derive from plan/IMPLEMENTATION_PLAN.md]
 
+This epic groups related stories for [cohesive capability area].
+
 ## Rationale
-[Why this epic is important — link to SCOPE.md or IMPLEMENTATION_PLAN.md context]
+[Why this grouping matters — must be different from milestone description]
 
 ## Scope
-- [ ] [Sub-task 1 — pull from phase task breakdown in IMPLEMENTATION_PLAN.md]
-- [ ] [Sub-task 2]
-- [ ] [Sub-task 3]
+- [ ] Story 1: [user-facing deliverable]
+- [ ] Story 2: [user-facing deliverable]
+- [ ] Story 3: [user-facing deliverable]
 
 ## Related Documentation
-- `plan/IMPLEMENTATION_PLAN.md#phase-x`.
-- `plan/SCOPE.md`.
+- `plan/IMPLEMENTATION_PLAN.md#phase-x`
+- `plan/SCOPE.md`
 
 ## Child Issues
 [These will auto-populate when parent/child relationships are established in GitHub UI]
-```
-
-### Task Issue Template
-
-```markdown
-## Description
-[What needs to be done — derive from IMPLEMENTATION_PLAN.md task checklist]
-
-## Acceptance Criteria
-- [ ] [Criterion 1 — pull from IMPLEMENTATION_PLAN.md validation steps]
-- [ ] [Criterion 2]
-- [ ] [Criterion 3]
-
-## Parent Epic
-See parent epic #[number]
-
-## Related Files
-- `scripts/[relevant-script].ps1`
-- `plan/IMPLEMENTATION_PLAN.md`
 ```
 
 **Note:** Template content placeholders should be populated from `plan/IMPLEMENTATION_PLAN.md`, which is the source of truth for task breakdown, objectives, and acceptance criteria.
